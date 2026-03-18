@@ -1,6 +1,6 @@
 # CashPlow 💸
 
-CashPlow (juga dikenal sebagai PPLow) adalah aplikasi pencatatan keuangan (Budget Tracker) modern berbasis web yang dirancang untuk membantu Anda memantau pengeluaran, pemasukan, dan transfer antar dompet dengan antarmuka yang bersih, responsif, dan mudah digunakan.
+CashPlow adalah aplikasi pencatatan keuangan (Budget Tracker) modern berbasis web yang dirancang untuk membantu Anda memantau pengeluaran, pemasukan, dan transfer antar dompet dengan antarmuka yang bersih, responsif, dan mudah digunakan.
 
 Aplikasi ini dibangun menggunakan tumpukan teknologi modern dengan performa tinggi dan siap diinstal sebagai aplikasi mandiri (PWA) di perangkat Anda.
 
