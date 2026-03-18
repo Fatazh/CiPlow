@@ -21,7 +21,7 @@ export default defineNuxtConfig({
     classSuffix: "",
     preference: "system",
     fallback: "light",
-    storageKey: "pplow-color-mode",
+    storageKey: "CashPlow-color-mode",
   },
 
   tailwindcss: {
@@ -35,7 +35,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: "PPLow — Budget Tracker",
+      title: "CashPlow — Budget Tracker",
       meta: [
         { charset: "utf-8" },
         {
@@ -74,8 +74,8 @@ export default defineNuxtConfig({
   pwa: {
     registerType: "autoUpdate",
     manifest: {
-      name: "PPLow — Budget Tracker",
-      short_name: "PPLow",
+      name: "CashPlow — Budget Tracker",
+      short_name: "CashPlow",
       description: "Aplikasi pencatatan keuangan pribadi",
       theme_color: "#10b981",
       background_color: "#f0fdf4",
@@ -171,7 +171,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL,
     public: {
-      appName: "PPLow",
+      appName: "CashPlow",
       defaultCurrency: "IDR",
       defaultLocale: "id-ID",
     },

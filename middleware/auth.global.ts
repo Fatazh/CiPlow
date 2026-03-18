@@ -3,14 +3,15 @@
 // and authenticated users away from /login and /register
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  // Skip on server
-  if (import.meta.server) return
-
   const { user, initialized, fetchUser } = useAuth()
 
-  // Initialize auth state on first navigation
+  // Initialize auth state on first navigation (works on both SSR and Client)
   if (!initialized.value) {
-    await fetchUser()
+    try {
+      await fetchUser()
+    } catch (e) {
+      // Ignore errors silently on initial fetch (like 401s)
+    }
   }
 
   const publicPages = ['/login', '/register']

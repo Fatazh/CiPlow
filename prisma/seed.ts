@@ -4,7 +4,7 @@ import {
   TransactionType,
   CategoryType,
 } from "@prisma/client";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -41,7 +41,7 @@ async function main() {
   const user = await prisma.user.create({
     data: {
       name: "Budi Santoso",
-      email: "budi@pplow.app",
+      email: "budi@CashPlow.app",
       password: hashedPassword,
       currency: "IDR",
       locale: "id-ID",

@@ -1,6 +1,13 @@
 // composables/useAuth.ts
 // Auth state management composable
 
+interface UserStats {
+  transactions: number
+  categories: number
+  wallets: number
+  budgets: number
+}
+
 interface User {
   id: string
   name: string
@@ -8,21 +15,36 @@ interface User {
   avatar?: string | null
   currency: string
   locale: string
+  createdAt?: string | Date
+  stats?: UserStats
 }
-
-const user = ref<User | null>(null)
-const loading = ref(true)
-const initialized = ref(false)
 
 export function useAuth() {
   const router = useRouter()
+
+  // Use Nuxt's useState to prevent cross-request state pollution during SSR
+  const user = useState<User | null>('auth-user', () => null)
+  const loading = useState<boolean>('auth-loading', () => true)
+  const initialized = useState<boolean>('auth-initialized', () => false)
 
   // ── Fetch current user ─────────────────────────────────────
   const fetchUser = async () => {
     try {
       loading.value = true
-      const res = await $fetch<{ ok: boolean; data: User }>('/api/auth/me')
-      user.value = res.data
+      
+      const headers = import.meta.server ? useRequestHeaders(['cookie']) as Record<string, string> : {}
+      
+      // We use $fetch and catch the error internally so it doesn't bubble up
+      // and cause unhandled SSR exceptions (like 401 Belum login)
+      const res = await $fetch<{ ok: boolean; data: User }>('/api/auth/me', {
+        headers
+      }).catch(() => null)
+      
+      if (res?.ok && res.data) {
+        user.value = res.data
+      } else {
+        user.value = null
+      }
     } catch {
       user.value = null
     } finally {
@@ -51,6 +73,22 @@ export function useAuth() {
     return res.data
   }
 
+  // ── Update Profile ──────────────────────────────────────────
+  const updateUser = async (data: { name?: string; email?: string; avatar?: string }) => {
+    try {
+      const res = await $fetch<{ ok: boolean; data: User }>('/api/auth/me', {
+        method: 'PUT',
+        body: data,
+      })
+      if (res.data) {
+        user.value = { ...user.value, ...res.data }
+      }
+      return res.data
+    } catch (err) {
+      throw err
+    }
+  }
+
   // ── Logout ─────────────────────────────────────────────────
   const logout = async () => {
     await $fetch('/api/auth/logout', { method: 'POST' })
@@ -70,5 +108,6 @@ export function useAuth() {
     login,
     register,
     logout,
+    updateUser,
   }
 }

@@ -24,11 +24,20 @@ interface TopExpense {
   changeIsPositive: boolean
 }
 
+interface SmartInsight {
+  id: string
+  icon: string
+  title: string
+  description: string
+  type: 'good' | 'warning' | 'danger' | 'info'
+}
+
 interface Props {
   trendSummary: TrendSummary | null
   topExpense: TopExpense | null
   currentSavingsRate: number
   currentSavings: number
+  smartInsights?: SmartInsight[]
   loading?: boolean
 }
 
@@ -37,6 +46,7 @@ const props = withDefaults(defineProps<Props>(), {
   topExpense: null,
   currentSavingsRate: 0,
   currentSavings: 0,
+  smartInsights: () => [],
   loading: false,
 })
 
@@ -56,7 +66,12 @@ interface Insight {
 
 // ── Insight generation ─────────────────────────────────────────
 const insights = computed<Insight[]>(() => {
-  const list: Insight[] = []
+  let list: Insight[] = []
+
+  // Add smart insights from backend first
+  if (props.smartInsights && props.smartInsights.length > 0) {
+    list = [...props.smartInsights]
+  }
 
   // ── 1. Savings rate insight ────────────────────────────────
   const rate = props.currentSavingsRate

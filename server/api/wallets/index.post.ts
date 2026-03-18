@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    return await tx.wallet.create({
+    const wallet = await tx.wallet.create({
       data: {
         name: body.name.trim(),
         type: body.type as any,
@@ -44,6 +44,37 @@ export default defineEventHandler(async (event) => {
         userId: user.id,
       },
     })
+
+    // If initial balance > 0, create an "Initial Balance" transaction
+    if (body.balance && body.balance > 0) {
+      // Find or create "Saldo Awal" or "Lainnya" income category
+      let category = await tx.category.findFirst({
+        where: { userId: user.id, name: 'Lainnya', type: 'INCOME' }
+      })
+
+      if (!category) {
+        // Fallback to any income category
+        category = await tx.category.findFirst({
+          where: { userId: user.id, type: 'INCOME' }
+        })
+      }
+
+      if (category) {
+        await tx.transaction.create({
+          data: {
+            userId: user.id,
+            amount: body.balance,
+            type: 'INCOME',
+            description: `Saldo Awal: ${wallet.name}`,
+            date: new Date(),
+            categoryId: category.id,
+            walletToId: wallet.id,
+          }
+        })
+      }
+    }
+
+    return wallet
   })
 
   return {

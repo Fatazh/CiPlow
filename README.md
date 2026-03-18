@@ -1,75 +1,87 @@
-# Nuxt Minimal Starter
+# CashPlow 💸
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+CashPlow (juga dikenal sebagai PPLow) adalah aplikasi pencatatan keuangan (Budget Tracker) modern berbasis web yang dirancang untuk membantu Anda memantau pengeluaran, pemasukan, dan transfer antar dompet dengan antarmuka yang bersih, responsif, dan mudah digunakan.
 
-## Setup
+Aplikasi ini dibangun menggunakan tumpukan teknologi modern dengan performa tinggi dan siap diinstal sebagai aplikasi mandiri (PWA) di perangkat Anda.
 
-Make sure to install dependencies:
+## ✨ Fitur Utama
 
-```bash
-# npm
-npm install
+- 🔐 **Autentikasi Aman**: Login dan registrasi pengguna dengan manajemen sesi yang ketat (kedaluwarsa otomatis dalam 3 hari untuk keamanan).
+- 📊 **Dashboard & Analitik Interaktif**: Visualisasi data keuangan Anda menggunakan grafik Donut dan tren mingguan/bulanan.
+- 💳 **Manajemen Dompet & Kategori**: Buat dan kelola berbagai sumber dana (Tunai, Bank, E-Wallet) dan kategori pengeluaran/pemasukan.
+- 📝 **Pencatatan Transaksi Detail**: 
+  - Dukungan untuk Pengeluaran (Expense), Pemasukan (Income), dan Transfer.
+  - Validasi pintar (mencegah pengeluaran melebihi saldo).
+  - Kalkulasi otomatis untuk jumlah barang dan harga satuan.
+  - Dukungan kode promo (Diskon %, Potongan Harga, atau Beli X Gratis Y).
+- 📥 **Import & Export**: Ekspor data Anda ke Excel atau impor data transaksi lama dengan mudah.
+- 📱 **PWA Ready**: Bisa diinstal langsung ke Home Screen HP Anda (Android/iOS) untuk pengalaman *fullscreen* layaknya aplikasi *native*.
+- 🌓 **Mode Gelap (Dark Mode)**: Dukungan tampilan mode gelap otomatis sesuai dengan preferensi sistem Anda.
 
-# pnpm
-pnpm install
+## 🛠️ Teknologi yang Digunakan
 
-# yarn
-yarn install
+- **Frontend:** [Nuxt 3](https://nuxt.com/) / Vue 3
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Backend/API:** Nitro (Bawaan Nuxt)
+- **Database ORM:** [Prisma](https://www.prisma.io/) (v7)
+- **Database:** PostgreSQL
+- **Ikon & UI:** SVG kustom dengan elemen Glassmorphism
 
-# bun
-bun install
-```
+## 🚀 Cara Menjalankan di Lokal (Development)
 
-## Development Server
+### Persyaratan Sistem
+- Node.js (v18 atau lebih baru)
+- Database PostgreSQL (Lokal atau Cloud seperti Neon/Supabase)
 
-Start the development server on `http://localhost:3000`:
+### Langkah-langkah
 
-```bash
-# npm
-npm run dev
+1. **Clone Repositori**
+   ```bash
+   git clone https://github.com/username-anda/cashplow.git
+   cd cashplow
+   ```
 
-# pnpm
-pnpm dev
+2. **Instal Dependensi**
+   ```bash
+   npm install
+   ```
 
-# yarn
-yarn dev
+3. **Konfigurasi Environment**
+   Salin file `.env.example` menjadi `.env` dan sesuaikan koneksi database Anda:
+   ```bash
+   cp .env.example .env
+   ```
+   *Isi `DATABASE_URL` di dalam file `.env` dengan URL koneksi PostgreSQL Anda.*
 
-# bun
-bun run dev
-```
+4. **Persiapkan Database (Prisma)**
+   Jalankan migrasi database dan hasilkan Prisma Client:
+   ```bash
+   npm run postinstall
+   npx prisma db push
+   ```
 
-## Production
+5. **Isi Data Awal (Seeding)** *(Opsional)*
+   Jika Anda ingin mengisi database dengan data *dummy* (User, Dompet, Kategori):
+   ```bash
+   npm run db:seed
+   ```
 
-Build the application for production:
+6. **Jalankan Server Lokal**
+   ```bash
+   npm run dev
+   ```
+   Aplikasi akan berjalan di `http://localhost:3000`.
 
-```bash
-# npm
-npm run build
+## ☁️ Deployment (Vercel)
 
-# pnpm
-pnpm build
+Aplikasi ini sudah dikonfigurasi untuk *deployment* mudah menggunakan Vercel. 
+File `vercel.json` dan skrip `vercel-build` di `package.json` akan memastikan Prisma *generate* dan sinkronisasi database berjalan otomatis saat *build*.
 
-# yarn
-yarn build
+1. Hubungkan repositori GitHub ini ke proyek baru di Vercel.
+2. Di Dashboard Vercel, masuk ke **Settings > Environment Variables**.
+3. Tambahkan variabel `DATABASE_URL` yang mengarah ke database PostgreSQL _production_ Anda.
+4. Klik **Deploy**.
 
-# bun
-bun run build
-```
+## 📄 Lisensi
 
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Proyek ini dibuat untuk keperluan personal/portofolio. Hak Cipta dilindungi.

@@ -4,6 +4,7 @@
 import { z } from 'zod'
 import { PromoType } from '@prisma/client'
 import prisma from '~/server/utils/prisma'
+import { updateBudgetSpent } from '~/server/utils/budget'
 
 const transactionSchema = z.object({
   amount: z.number().positive('Nominal harus lebih dari 0'),
@@ -55,10 +56,28 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Kategori tidak ditemukan' })
   }
 
-  // Verify wallets exist
+  // ── Validation: Category Type Match ─────────────────────────
+  if (body.type === 'INCOME' && category.type !== 'INCOME') {
+    throw createError({ statusCode: 400, message: 'Transaksi pemasukan harus menggunakan kategori bertipe Pemasukan' })
+  }
+  if (body.type === 'EXPENSE' && category.type !== 'EXPENSE') {
+    throw createError({ statusCode: 400, message: 'Transaksi pengeluaran harus menggunakan kategori bertipe Pengeluaran' })
+  }
+
+  // Verify wallets exist and check balance
+  const amount = body.amount
+
   if (body.walletFromId) {
     const w = await prisma.wallet.findFirst({ where: { id: body.walletFromId, userId: user.id } })
     if (!w) throw createError({ statusCode: 404, message: 'Dompet sumber tidak ditemukan' })
+    
+    // Check for sufficient balance (for EXPENSE and TRANSFER)
+    if ((body.type === 'EXPENSE' || body.type === 'TRANSFER') && Number(w.balance) < amount) {
+      throw createError({ 
+        statusCode: 400, 
+        message: `Saldo tidak mencukupi. Saldo saat ini: ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(Number(w.balance))}` 
+      })
+    }
   }
   if (body.walletToId) {
     const w = await prisma.wallet.findFirst({ where: { id: body.walletToId, userId: user.id } })
@@ -66,7 +85,6 @@ export default defineEventHandler(async (event) => {
   }
 
   // ── Create transaction + update wallet balances in a transaction ──
-  const amount = body.amount
   const txDate = body.date ? new Date(body.date) : new Date()
 
   const txResult = await prisma.$transaction(async (tx) => {
@@ -104,6 +122,8 @@ export default defineEventHandler(async (event) => {
         where: { id: body.walletFromId },
         data: { balance: { decrement: amount } },
       })
+      // Update budget 'spent' amount
+      await updateBudgetSpent(tx, user.id, body.categoryId, txDate, amount)
     } else if (body.type === 'INCOME' && body.walletToId) {
       await tx.wallet.update({
         where: { id: body.walletToId },

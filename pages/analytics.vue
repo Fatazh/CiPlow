@@ -1,5 +1,5 @@
 <script setup lang="ts">
-useHead({ title: "Analitik — PPLow" });
+useHead({ title: "Analitik — CashPlow" });
 
 // ── Composables ────────────────────────────────────────────────
 const { formatCompact } = useCurrency();
@@ -30,9 +30,16 @@ const {
         `/api/analytics/categories?month=${period.value.month}&year=${period.value.year}`,
 );
 
+// ── API: Smart Insights ───────────────────────────────────────
+const { data: smartRaw, pending: smartLoading } = useLazyFetch(
+    () => `/api/analytics/smart-insights`,
+    { key: "smart-insights" },
+);
+
 // ── Typed accessors ────────────────────────────────────────────
 const trendData = computed(() => trendsRaw.value?.data ?? null);
 const catData = computed(() => catRaw.value?.data ?? null);
+const smartInsights = computed(() => (smartRaw.value?.data ?? []) as any);
 
 // ── Period selector: available months from API ─────────────────
 const availableMonths = computed(() => catData.value?.availableMonths ?? []);
@@ -240,7 +247,12 @@ const fallbackSummary = {
             :top-expense="topExpense"
             :current-savings-rate="catData?.summary?.savingsRate ?? 0"
             :current-savings="catData?.summary?.savings ?? 0"
-            :loading="(trendLoading && !trendData) || (catLoading && !catData)"
+            :smart-insights="smartInsights"
+            :loading="
+                (trendLoading && !trendData) ||
+                (catLoading && !catData) ||
+                smartLoading
+            "
         />
 
         <!-- Bottom spacer for nav bar -->

@@ -1,7 +1,8 @@
 // server/api/auth/me.get.ts
-// Get current authenticated user
+// Get current authenticated user and their stats
 
 import { getUserFromSession } from '~/server/utils/auth'
+import prisma from '~/server/utils/prisma'
 
 export default defineEventHandler(async (event) => {
   const user = await getUserFromSession(event)
@@ -10,8 +11,24 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Belum login' })
   }
 
+  // Get quick stats
+  const [txCount, catCount, walletCount, budgetCount] = await Promise.all([
+    prisma.transaction.count({ where: { userId: user.id } }),
+    prisma.category.count({ where: { userId: user.id } }),
+    prisma.wallet.count({ where: { userId: user.id } }),
+    prisma.budget.count({ where: { userId: user.id } }),
+  ])
+
   return {
     ok: true,
-    data: user,
+    data: {
+      ...user,
+      stats: {
+        transactions: txCount,
+        categories: catCount,
+        wallets: walletCount,
+        budgets: budgetCount,
+      }
+    },
   }
 })

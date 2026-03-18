@@ -4,6 +4,7 @@
 import { z } from 'zod'
 import { PromoType } from '@prisma/client'
 import prisma from '~/server/utils/prisma'
+import { updateBudgetSpent } from '~/server/utils/budget'
 
 const transactionUpdateSchema = z.object({
   amount: z.number().positive('Nominal harus lebih dari 0').optional(),
@@ -71,9 +72,40 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify category
-  if (body.categoryId) {
-    const cat = await prisma.category.findFirst({ where: { id: body.categoryId, userId: user.id } })
-    if (!cat) throw createError({ statusCode: 404, message: 'Kategori tidak ditemukan' })
+  const targetCategory = await prisma.category.findFirst({ 
+    where: { id: newCategoryId, userId: user.id } 
+  })
+  if (!targetCategory) throw createError({ statusCode: 404, message: 'Kategori tidak ditemukan' })
+
+  // ── Validation: Category Type Match ─────────────────────────
+  if (newType === 'INCOME' && targetCategory.type !== 'INCOME') {
+    throw createError({ statusCode: 400, message: 'Transaksi pemasukan harus menggunakan kategori bertipe Pemasukan' })
+  }
+  if (newType === 'EXPENSE' && targetCategory.type !== 'EXPENSE') {
+    throw createError({ statusCode: 400, message: 'Transaksi pengeluaran harus menggunakan kategori bertipe Pengeluaran' })
+  }
+
+  // ── Wallet and Balance Validation ───────────────────────────
+  if (newWalletFromId) {
+    const w = await prisma.wallet.findFirst({ where: { id: newWalletFromId, userId: user.id } })
+    if (!w) throw createError({ statusCode: 404, message: 'Dompet sumber tidak ditemukan' })
+
+    // Check balance for EXPENSE/TRANSFER during update
+    if (newType === 'EXPENSE' || newType === 'TRANSFER') {
+      // Logic for update: available balance = current + old (if reversed)
+      // but simpler check: if it's the same wallet, we add the old amount back mentally
+      let effectiveBalance = Number(w.balance)
+      if (existing.walletFromId === newWalletFromId) {
+        effectiveBalance += Number(existing.amount)
+      }
+      
+      if (effectiveBalance < newAmount) {
+        throw createError({ 
+          statusCode: 400, 
+          message: `Saldo tidak mencukupi untuk pembaruan ini. Saldo efektif: ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(effectiveBalance)}` 
+        })
+      }
+    }
   }
 
   const oldAmount = Number(existing.amount)
@@ -90,6 +122,8 @@ export default defineEventHandler(async (event) => {
         where: { id: oldWalletFromId },
         data: { balance: { increment: oldAmount } },
       })
+      // Reverse old budget spent
+      await updateBudgetSpent(tx, user.id, existing.categoryId, existing.date, -oldAmount)
     } else if (oldType === 'INCOME' && oldWalletToId) {
       await tx.wallet.update({
         where: { id: oldWalletToId },
@@ -140,6 +174,9 @@ export default defineEventHandler(async (event) => {
         where: { id: newWalletFromId },
         data: { balance: { decrement: newAmount } },
       })
+      // Apply new budget spent
+      const finalDate = updated.date
+      await updateBudgetSpent(tx, user.id, updated.categoryId, finalDate, newAmount)
     } else if (newType === 'INCOME' && newWalletToId) {
       await tx.wallet.update({
         where: { id: newWalletToId },

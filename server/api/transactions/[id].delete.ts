@@ -2,6 +2,7 @@
 // Delete a transaction + reverse wallet balance changes
 
 import prisma from '~/server/utils/prisma'
+import { updateBudgetSpent } from '~/server/utils/budget'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -22,6 +23,8 @@ const existing = await prisma.transaction.findFirst({
         where: { id: existing.walletFromId },
         data: { balance: { increment: amount } },
       })
+      // Reverse budget spent
+      await updateBudgetSpent(tx, user.id, existing.categoryId, existing.date, -amount)
     } else if (existing.type === 'INCOME' && existing.walletToId) {
       await tx.wallet.update({
         where: { id: existing.walletToId },

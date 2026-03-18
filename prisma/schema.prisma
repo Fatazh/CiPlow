@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-// PPLow — Budget Tracker · Prisma Schema
+// CashPlow — Budget Tracker · Prisma Schema
 // Compatible with Prisma 6.x (installed: 6.19.x)
 // NOTE: When you migrate to Prisma 7+, move the DATABASE_URL
 // to prisma.config.ts. For now, url = env() is still valid
@@ -13,7 +13,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ─── Enums ───────────────────────────────────────────────────
