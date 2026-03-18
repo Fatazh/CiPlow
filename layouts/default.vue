@@ -15,6 +15,7 @@ const { user } = useAuth()
     <!-- ── Top Header ─────────────────────────────────────── -->
     <AppHeader
       :user-name="user?.name ?? 'User'"
+      :avatar-url="user?.avatar ?? undefined"
       :has-notification="true"
     />
 

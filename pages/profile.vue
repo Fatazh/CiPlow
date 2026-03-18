@@ -219,14 +219,14 @@ const handleAction = (action: string) => {
                     />
                     <div
                         v-else
-                        class="w-full h-full flex items-center justify-center bg-white/25 text-white text-xl font-bold select-none"
+                        class="w-full h-full flex items-center justify-center bg-white/25 text-[#40513B] dark:text-white text-xl font-bold select-none"
                     >
                         {{ initials }}
                     </div>
 
                     <!-- Edit button overlay -->
                     <button
-                        class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity duration-200 text-white text-xs font-semibold"
+                        class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity duration-200 text-[#40513B] dark:text-white text-xs font-semibold"
                         aria-label="Ganti foto profil"
                         @click="handleAction('edit-profile')"
                     >
@@ -237,23 +237,25 @@ const handleAction = (action: string) => {
                 <!-- Name & email -->
                 <div class="flex-1 min-w-0">
                     <h2
-                        class="text-white font-bold text-lg leading-tight truncate"
+                        class="text-[#40513B] dark:text-white font-bold text-lg leading-tight truncate"
                     >
                         {{ userDisplay.name }}
                     </h2>
                     <p
-                        class="text-white/70 text-xs font-medium mt-0.5 truncate"
+                        class="text-[#40513B]/80 dark:text-white/70 text-xs font-medium mt-0.5 truncate"
                     >
                         {{ userDisplay.email }}
                     </p>
-                    <p class="text-white/50 text-[11px] mt-1">
+                    <p
+                        class="text-[#40513B]/75 dark:text-white/50 text-[11px] mt-1"
+                    >
                         Bergabung {{ userDisplay.joined }}
                     </p>
                 </div>
 
                 <!-- Edit icon button -->
                 <button
-                    class="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white text-base transition-all duration-200 active:scale-90"
+                    class="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-[#40513B] dark:text-white text-base transition-all duration-200 active:scale-90"
                     aria-label="Edit profil"
                     @click="handleAction('edit-profile')"
                 >
@@ -272,11 +274,11 @@ const handleAction = (action: string) => {
                 >
                     <span class="text-lg leading-none">{{ stat.icon }}</span>
                     <span
-                        class="text-white font-extrabold text-sm leading-none"
+                        class="text-[#40513B] dark:text-white font-extrabold text-sm leading-none"
                         >{{ stat.value }}</span
                     >
                     <span
-                        class="text-white/60 text-[9px] font-medium uppercase tracking-wide"
+                        class="text-[#40513B]/80 dark:text-white/60 text-[9px] font-medium uppercase tracking-wide"
                         >{{ stat.label }}</span
                     >
                 </div>
