@@ -68,9 +68,9 @@ const dismiss = () => {
                 <div class="flex items-start gap-3">
                     <!-- App icon -->
                     <div
-                        class="w-12 h-12 rounded-xl flex-shrink-0 bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30"
+                        class="w-12 h-12 rounded-xl flex-shrink-0 bg-white dark:bg-surface-800 flex items-center justify-center shadow-lg shadow-emerald-500/30 overflow-hidden p-1"
                     >
-                        <span class="text-xl text-white font-extrabold">₽</span>
+                        <img src="/logo.png" alt="App Logo" class="w-full h-full object-contain" />
                     </div>
 
                     <div class="flex-1 min-w-0">
