@@ -25,7 +25,7 @@ export default defineNuxtConfig({
   },
 
   tailwindcss: {
-    cssPath: "~/assets/css/main.css",
+    // cssPath: "~/assets/css/main.css",
     configPath: "~/tailwind.config.ts",
     exposeConfig: false,
     viewer: true,
@@ -36,6 +36,9 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: "CashPlow — Budget Tracker",
+      htmlAttrs: {
+        lang: "id",
+      },
       meta: [
         { charset: "utf-8" },
         {
@@ -65,6 +68,10 @@ export default defineNuxtConfig({
         {
           rel: "stylesheet",
           href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap",
+        },
+        {
+          rel: "apple-touch-icon",
+          href: "/icon-512x512.png",
         },
       ],
     },
@@ -97,6 +104,12 @@ export default defineNuxtConfig({
           sizes: "512x512",
           type: "image/png",
           purpose: "any maskable",
+        },
+        {
+          src: "/icon-monochrome.png",
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "monochrome",
         },
       ],
     },
