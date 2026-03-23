@@ -6,6 +6,7 @@ const updateProfileSchema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter').max(50, 'Nama maksimal 50 karakter').optional(),
   email: z.string().email('Format email tidak valid').optional(),
   avatar: z.string().optional(),
+  currency: z.string().optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -28,6 +29,10 @@ export default defineEventHandler(async (event) => {
 
   if (result.data.avatar !== undefined && result.data.avatar !== user.avatar) {
     dataToUpdate.avatar = result.data.avatar
+  }
+
+  if (result.data.currency && result.data.currency !== user.currency) {
+    dataToUpdate.currency = result.data.currency
   }
 
   if (result.data.email && result.data.email !== user.email) {

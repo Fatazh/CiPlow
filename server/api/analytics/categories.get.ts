@@ -61,9 +61,10 @@ export default defineEventHandler(async (event) => {
         type:   { in: ["INCOME", "EXPENSE"] },
       },
       select: {
-        type:       true,
-        amount:     true,
-        categoryId: true,
+        type:         true,
+        amount:       true,
+        targetAmount: true,
+        categoryId:   true,
       },
     }),
   ]);
@@ -87,10 +88,11 @@ export default defineEventHandler(async (event) => {
   for (const tx of currentTxs) {
     const map = tx.type === "INCOME" ? incomeMap : expenseMap;
     const key = tx.categoryId;
+    const amt = Number(tx.targetAmount ?? tx.amount);
 
     const existing = map.get(key);
     if (existing) {
-      existing.amount           += Number(tx.amount);
+      existing.amount           += amt;
       existing.transactionCount += 1;
     } else {
       map.set(key, {
@@ -99,7 +101,7 @@ export default defineEventHandler(async (event) => {
         icon:             tx.category.icon,
         color:            tx.category.color,
         type:             tx.type as "INCOME" | "EXPENSE",
-        amount:           Number(tx.amount),
+        amount:           amt,
         transactionCount: 1,
         avgAmount:        0,
         percentage:       0,
@@ -113,7 +115,8 @@ export default defineEventHandler(async (event) => {
 
   for (const tx of prevTxs) {
     const map = tx.type === "INCOME" ? prevIncomeMap : prevExpenseMap;
-    map.set(tx.categoryId, (map.get(tx.categoryId) ?? 0) + Number(tx.amount));
+    const amt = Number(tx.targetAmount ?? tx.amount);
+    map.set(tx.categoryId, (map.get(tx.categoryId) ?? 0) + amt);
   }
 
   // ── Finalize percentages & averages ───────────────────────
@@ -145,7 +148,7 @@ export default defineEventHandler(async (event) => {
           changePercent:    change,
           changeIsPositive: c.type === "INCOME"
             ? (change ?? 0) >= 0
-            : (change ?? 0) <= 0,   // for expense: less = positive
+            : (change ?? 0) <= 0,
         };
       });
 
@@ -175,17 +178,17 @@ export default defineEventHandler(async (event) => {
   for (const tx of currentTxs) {
     const day = tx.date.getDate();
     let weekIndex = Math.floor((day - 1) / 7);
-    if (weekIndex > 4) weekIndex = 4; // Days 29-31 go to week 5
+    if (weekIndex > 4) weekIndex = 4;
     
+    const amt = Number(tx.targetAmount ?? tx.amount);
     if (tx.type === "INCOME") {
-      weeklyTrends[weekIndex].income += Number(tx.amount);
+      weeklyTrends[weekIndex]!.income += amt;
     } else if (tx.type === "EXPENSE") {
-      weeklyTrends[weekIndex].expense += Number(tx.amount);
+      weeklyTrends[weekIndex]!.expense += amt;
     }
   }
 
   // ── Available months for period selector ──────────────────
-  // Returns last 6 months as navigation options
   const availableMonths = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     return {
@@ -196,7 +199,6 @@ export default defineEventHandler(async (event) => {
     };
   });
 
-  // ── Response ──────────────────────────────────────────────
   return {
     ok:          true,
     generatedAt: now.toISOString(),

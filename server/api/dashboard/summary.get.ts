@@ -73,7 +73,7 @@ export default defineEventHandler(async (event) => {
         type: { in: ["INCOME", "EXPENSE"] },
         date: { gte: prevStart, lte: prevEnd },
       },
-      select: { type: true, amount: true },
+      select: { type: true, amount: true, targetAmount: true },
     }),
 
     // Active budgets for current month with category info
@@ -102,33 +102,51 @@ export default defineEventHandler(async (event) => {
   ]);
 
   // ── Balance ───────────────────────────────────────────────
-  const totalBalance = wallets.reduce((sum, w) => sum + Number(w.balance), 0);
+  const baseCurrency = user.currency
+
+  // For total balance, we must convert each wallet balance to user's base currency
+  let totalBalanceInBase = 0
+  for (const w of wallets) {
+    if (w.currency === baseCurrency) {
+      totalBalanceInBase += Number(w.balance)
+    } else {
+      try {
+        // We fetch current rate from our own API
+        const rateRes = await $fetch<any>(`/api/exchange-rates?base=${w.currency}&target=${baseCurrency}`)
+        totalBalanceInBase += Number(w.balance) * (rateRes.rate ?? 1)
+      } catch (e) {
+        totalBalanceInBase += Number(w.balance)
+      }
+    }
+  }
 
   const formattedWallets = wallets.map((w) => ({
     id: w.id,
     name: w.name,
     type: w.type,
     balance: Number(w.balance),
+    currency: w.currency,
     color: w.color,
     icon: w.icon,
   }));
 
   // ── Monthly income / expense ──────────────────────────────
+  // Use targetAmount (value in user's base currency) for reporting
   const curIncome = curTransactions
     .filter((t) => t.type === "INCOME")
-    .reduce((s, t) => s + Number(t.amount), 0);
+    .reduce((s, t) => s + Number(t.targetAmount ?? t.amount), 0);
 
   const curExpense = curTransactions
     .filter((t) => t.type === "EXPENSE")
-    .reduce((s, t) => s + Number(t.amount), 0);
+    .reduce((s, t) => s + Number(t.targetAmount ?? t.amount), 0);
 
   const prevIncome = prevTransactions
     .filter((t) => t.type === "INCOME")
-    .reduce((s, t) => s + Number(t.amount), 0);
+    .reduce((s, t) => s + Number(t.targetAmount ?? t.amount), 0);
 
   const prevExpense = prevTransactions
     .filter((t) => t.type === "EXPENSE")
-    .reduce((s, t) => s + Number(t.amount), 0);
+    .reduce((s, t) => s + Number(t.targetAmount ?? t.amount), 0);
 
   // Percentage change helpers
   const pctChange = (cur: number, prev: number): number => {
@@ -141,8 +159,8 @@ export default defineEventHandler(async (event) => {
 
   // Approximate last-month balance (total minus current net)
   const curNet = curIncome - curExpense;
-  const lastMonthBal = Math.max(0, totalBalance - curNet);
-  const balChange = pctChange(totalBalance, lastMonthBal);
+  const lastMonthBal = Math.max(0, totalBalanceInBase - curNet);
+  const balChange = pctChange(totalBalanceInBase, lastMonthBal);
 
   const savings = curIncome - curExpense;
   const savingsRate =
@@ -162,11 +180,11 @@ export default defineEventHandler(async (event) => {
     const key = tx.categoryId;
     const existing = categoryMap.get(key);
     if (existing) {
-      existing.amount += Number(tx.amount);
+      existing.amount += Number(tx.targetAmount ?? tx.amount);
     } else {
       categoryMap.set(key, {
         category: tx.category,
-        amount: Number(tx.amount),
+        amount: Number(tx.targetAmount ?? tx.amount),
       });
     }
   }
@@ -187,13 +205,12 @@ export default defineEventHandler(async (event) => {
     }));
 
   // ── Budgets with live spent calculation ───────────────────
-  // Build a map: categoryId → spent amount in current month from real transactions
   const spentByCat = new Map<string, number>();
   for (const tx of curTransactions) {
     if (tx.type !== "EXPENSE") continue;
     spentByCat.set(
       tx.categoryId,
-      (spentByCat.get(tx.categoryId) ?? 0) + Number(tx.amount),
+      (spentByCat.get(tx.categoryId) ?? 0) + Number(tx.targetAmount ?? tx.amount),
     );
   }
 
@@ -218,7 +235,6 @@ export default defineEventHandler(async (event) => {
 
   // ── Recent transactions (last 5) ──────────────────────────
   const formattedTransactions = recentTransactions.map((tx) => {
-    // Determine wallet name + icon based on transaction type
     const walletName =
       tx.walletFrom?.name ?? tx.walletTo?.name ?? "Tidak Diketahui";
     const walletIcon = tx.walletFrom?.icon ?? tx.walletTo?.icon ?? "💳";
@@ -245,7 +261,7 @@ export default defineEventHandler(async (event) => {
     generatedAt: now.toISOString(),
     data: {
       balance: {
-        total: totalBalance,
+        total: totalBalanceInBase,
         lastMonth: lastMonthBal,
         changePercent: Math.abs(balChange),
         isPositive: balChange >= 0,

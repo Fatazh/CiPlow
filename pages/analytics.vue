@@ -49,6 +49,7 @@ const topExpense = computed(() => {
     const items = catData.value?.expense?.items;
     if (!items?.length) return null;
     const top = items[0];
+    if (!top) return null;
     return {
         name: top.name,
         icon: top.icon,

@@ -59,7 +59,7 @@ export const useDate = () => {
 
   /**
    * Format as full Indonesian date
-   * e.g. "10 Maret 2025"
+   * e.g. "10 Maret 2026"
    */
   const formatDate = (
     value: Date | string | number | null | undefined,
@@ -70,7 +70,7 @@ export const useDate = () => {
 
   /**
    * Format as short Indonesian date
-   * e.g. "10 Mar 2025"
+   * e.g. "10 Mar 2026"
    */
   const formatDateShort = (
     value: Date | string | number | null | undefined,
@@ -81,7 +81,7 @@ export const useDate = () => {
 
   /**
    * Format as date with day name
-   * e.g. "Senin, 10 Maret 2025"
+   * e.g. "Senin, 10 Maret 2026"
    */
   const formatDateFull = (
     value: Date | string | number | null | undefined,
@@ -105,7 +105,7 @@ export const useDate = () => {
 
   /**
    * Format as date + time
-   * e.g. "10 Mar 2025, 14:30"
+   * e.g. "10 Mar 2026, 14:30"
    */
   const formatDateTime = (
     value: Date | string | number | null | undefined,
@@ -115,7 +115,7 @@ export const useDate = () => {
 
   /**
    * Format as month + year only
-   * e.g. "Maret 2025"
+   * e.g. "Maret 2026"
    */
   const formatMonthYear = (
     value: Date | string | number | null | undefined,
@@ -126,7 +126,7 @@ export const useDate = () => {
 
   /**
    * Format as short month + year
-   * e.g. "Mar 2025"
+   * e.g. "Mar 2065"
    */
   const formatMonthYearShort = (
     value: Date | string | number | null | undefined,
@@ -195,12 +195,12 @@ export const useDate = () => {
    * e.g. "Maret"
    */
   const currentMonthName = (): string => {
-    return MONTHS_ID[new Date().getMonth()];
+    return MONTHS_ID[new Date().getMonth()] || "";
   };
 
   /**
    * Get the current month + year
-   * e.g. "Maret 2025"
+   * e.g. "Maret 2026"
    */
   const currentMonthYear = (): string => {
     return formatMonthYear(new Date());
@@ -218,7 +218,7 @@ export const useDate = () => {
 
   /**
    * Get start of a month as Date
-   * e.g. startOfMonth(3, 2025) → 2025-03-01T00:00:00
+   * e.g. startOfMonth(3, 2026) → 2026-03-01T00:00:00
    */
   const startOfMonth = (month: number, year: number): Date => {
     return new Date(year, month - 1, 1, 0, 0, 0, 0);
@@ -226,7 +226,7 @@ export const useDate = () => {
 
   /**
    * Get end of a month as Date
-   * e.g. endOfMonth(3, 2025) → 2025-03-31T23:59:59
+   * e.g. endOfMonth(3, 2026) → 2026-03-31T23:59:59
    */
   const endOfMonth = (month: number, year: number): Date => {
     return new Date(year, month, 0, 23, 59, 59, 999);
@@ -323,7 +323,7 @@ export const useDate = () => {
       }
 
       if (!groups[label]) groups[label] = [];
-      groups[label].push(item);
+      groups[label]!.push(item);
     }
 
     return Object.entries(groups).map(([label, items]) => ({ label, items }));
@@ -353,7 +353,7 @@ export const useDate = () => {
 
   /**
    * Format a date as ISO date string (YYYY-MM-DD)
-   * e.g. "2025-03-10"
+   * e.g. "2026-03-10"
    */
   const toISODate = (
     value: Date | string | number | null | undefined,

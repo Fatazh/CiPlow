@@ -75,6 +75,10 @@ const form = reactive({
     promoType: "PERCENTAGE" as "PERCENTAGE" | "FIXED" | "BUY_X_GET_Y",
     promoValue: 0,
     promoDetails: "",
+    // Recurring Fields
+    isRecurring: false,
+    recurringInterval: "MONTHLY" as "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY",
+    recurringEndDate: "",
 });
 
 // Auto-calculate amount for EXPENSE
@@ -225,37 +229,64 @@ const submit = async () => {
     saving.value = true;
 
     try {
+        const payload = {
+            amount: form.amount,
+            type: txType.value,
+            categoryId: form.categoryId,
+            walletFromId: form.walletFromId || undefined,
+            walletToId: form.walletToId || undefined,
+            description: form.description || undefined,
+            notes: form.notes || undefined,
+            date: form.date ? new Date(form.date).toISOString() : undefined,
+            // Detail fields
+            quantity: txType.value === "EXPENSE" ? form.quantity : undefined,
+            unitPrice: txType.value === "EXPENSE" ? form.unitPrice : undefined,
+            // Promo fields
+            isPromo: form.isPromo,
+            promoType: form.isPromo ? form.promoType : undefined,
+            promoValue:
+                form.isPromo && form.promoType !== "BUY_X_GET_Y"
+                    ? form.promoValue
+                    : undefined,
+            promoDetails:
+                form.isPromo && form.promoType === "BUY_X_GET_Y"
+                    ? form.promoDetails
+                    : undefined,
+        };
+
+        // Always create the immediate transaction
         await $fetch("/api/transactions", {
             method: "POST",
-            body: {
-                amount: form.amount,
-                type: txType.value,
-                categoryId: form.categoryId,
-                walletFromId: form.walletFromId || undefined,
-                walletToId: form.walletToId || undefined,
-                description: form.description || undefined,
-                notes: form.notes || undefined,
-                date: form.date ? new Date(form.date).toISOString() : undefined,
-                // Detail fields
-                quantity:
-                    txType.value === "EXPENSE" ? form.quantity : undefined,
-                unitPrice:
-                    txType.value === "EXPENSE" ? form.unitPrice : undefined,
-                // Promo fields
-                isPromo: form.isPromo,
-                promoType: form.isPromo ? form.promoType : undefined,
-                promoValue:
-                    form.isPromo && form.promoType !== "BUY_X_GET_Y"
-                        ? form.promoValue
-                        : undefined,
-                promoDetails:
-                    form.isPromo && form.promoType === "BUY_X_GET_Y"
-                        ? form.promoDetails
-                        : undefined,
-            },
+            body: payload,
         });
 
-        toast.message = "Transaksi berhasil ditambahkan! 🎉";
+        // If recurring is enabled, calculate the NEXT date and create the recurring schedule
+        if (form.isRecurring) {
+            let nextDate = new Date(form.date || new Date());
+            if (form.recurringInterval === 'DAILY') {
+                nextDate.setDate(nextDate.getDate() + 1);
+            } else if (form.recurringInterval === 'WEEKLY') {
+                nextDate.setDate(nextDate.getDate() + 7);
+            } else if (form.recurringInterval === 'MONTHLY') {
+                nextDate.setMonth(nextDate.getMonth() + 1);
+            } else if (form.recurringInterval === 'YEARLY') {
+                nextDate.setFullYear(nextDate.getFullYear() + 1);
+            }
+
+            const recurringPayload = {
+                ...payload,
+                interval: form.recurringInterval,
+                startDate: nextDate.toISOString(), // Start on the next cycle, since current is handled above
+                endDate: form.recurringEndDate ? new Date(form.recurringEndDate).toISOString() : undefined,
+            };
+
+            await $fetch("/api/recurring-transactions", {
+                method: "POST",
+                body: recurringPayload,
+            });
+        }
+
+        toast.message = form.isRecurring ? "Transaksi & Jadwal Berulang berhasil ditambahkan! 🎉" : "Transaksi berhasil ditambahkan! 🎉";
         toast.type = "success";
         toast.show = true;
 
@@ -618,6 +649,40 @@ const typeColor = computed(() => {
                         rows="2"
                         placeholder="Keterangan tambahan..."
                     ></textarea>
+                </div>
+
+                <!-- Recurring Toggle -->
+                <div class="card rounded-2xl p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800 dark:text-gray-100">Jadikan Transaksi Berulang?</p>
+                            <p class="text-[10px] text-gray-400 mt-0.5">Otomatis catat transaksi ini setiap periode tertentu.</p>
+                        </div>
+                        <button type="button" @click="form.isRecurring = !form.isRecurring"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200"
+                                :class="form.isRecurring ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-700'">
+                            <span :class="form.isRecurring ? 'translate-x-6' : 'translate-x-1'"
+                                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200" />
+                        </button>
+                    </div>
+                    
+                    <div v-if="form.isRecurring" class="mt-4 space-y-3 animate-slide-up border-t border-gray-100 dark:border-gray-800 pt-4">
+                        <div>
+                            <label class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block">Interval</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button v-for="opt in ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']" :key="opt"
+                                        @click="form.recurringInterval = opt as any"
+                                        class="py-2 rounded-xl text-xs font-bold transition-all"
+                                        :class="form.recurringInterval === opt ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-500 border border-primary-200' : 'bg-gray-50 dark:bg-gray-800 text-gray-500'">
+                                    {{ opt === 'DAILY' ? 'Harian' : opt === 'WEEKLY' ? 'Mingguan' : opt === 'MONTHLY' ? 'Bulanan' : 'Tahunan' }}
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block">Berakhir Pada (Opsional)</label>
+                            <input v-model="form.recurringEndDate" type="date" class="input text-sm" />
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Total Nominal (Big Display) -->

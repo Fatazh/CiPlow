@@ -12,7 +12,7 @@ const existing = await prisma.category.findFirst({
     where: { id, userId: user.id },
     include: {
       _count: {
-        select: { transactions: true, budgets: true },
+        select: { transactions: true, budgets: true, recurringTransactions: true },
       },
     },
   })
@@ -26,10 +26,11 @@ const existing = await prisma.category.findFirst({
     })
   }
 
-  if (existing._count.transactions > 0) {
+  const totalUsage = existing._count.transactions + existing._count.recurringTransactions
+  if (totalUsage > 0) {
     throw createError({
       statusCode: 409,
-      message: `Kategori ini memiliki ${existing._count.transactions} transaksi. Pindahkan transaksi ke kategori lain terlebih dahulu.`,
+      message: `Kategori ini memiliki ${totalUsage} transaksi (termasuk rutin). Pindahkan transaksi ke kategori lain terlebih dahulu.`,
     })
   }
 

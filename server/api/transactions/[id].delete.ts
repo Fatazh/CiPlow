@@ -3,6 +3,7 @@
 
 import prisma from '~/server/utils/prisma'
 import { updateBudgetSpent } from '~/server/utils/budget'
+import { recalculateWalletBalance } from '~/server/utils/wallet'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -17,36 +18,21 @@ const existing = await prisma.transaction.findFirst({
   const amount = Number(existing.amount)
 
   await prisma.$transaction(async (tx) => {
-    // Reverse wallet balance changes
-    if (existing.type === 'EXPENSE' && existing.walletFromId) {
-      await tx.wallet.update({
-        where: { id: existing.walletFromId },
-        data: { balance: { increment: amount } },
-      })
-      // Reverse budget spent
+    // Reverse budget spent (only for EXPENSE)
+    if (existing.type === 'EXPENSE') {
       await updateBudgetSpent(tx, user.id, existing.categoryId, existing.date, -amount)
-    } else if (existing.type === 'INCOME' && existing.walletToId) {
-      await tx.wallet.update({
-        where: { id: existing.walletToId },
-        data: { balance: { decrement: amount } },
-      })
-    } else if (existing.type === 'TRANSFER') {
-      if (existing.walletFromId) {
-        await tx.wallet.update({
-          where: { id: existing.walletFromId },
-          data: { balance: { increment: amount } },
-        })
-      }
-      if (existing.walletToId) {
-        await tx.wallet.update({
-          where: { id: existing.walletToId },
-          data: { balance: { decrement: amount } },
-        })
-      }
     }
 
     // Delete the transaction
     await tx.transaction.delete({ where: { id } })
+
+    // Recalculate affected wallet balances
+    if (existing.walletFromId) {
+      await recalculateWalletBalance(tx, existing.walletFromId)
+    }
+    if (existing.walletToId) {
+      await recalculateWalletBalance(tx, existing.walletToId)
+    }
   })
 
   return { ok: true, message: 'Transaksi berhasil dihapus' }

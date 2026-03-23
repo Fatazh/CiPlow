@@ -90,7 +90,7 @@ const grouped = computed(() => {
 
     for (const tx of transactions.value) {
         const d = new Date(tx.date);
-        const key = d.toISOString().split("T")[0];
+        const key = d.toISOString().split("T")[0] as string;
         if (!map.has(key)) map.set(key, []);
         map.get(key)!.push(tx);
     }

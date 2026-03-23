@@ -8,6 +8,7 @@ export default defineNuxtConfig({
     "@nuxtjs/color-mode",
     "@vueuse/nuxt",
     "@vite-pwa/nuxt",
+    "@pinia/nuxt",
   ],
 
   components: [

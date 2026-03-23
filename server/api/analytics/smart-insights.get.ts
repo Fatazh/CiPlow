@@ -35,14 +35,14 @@ export default defineEventHandler(async (event) => {
   
   transactions.filter(t => t.type === 'EXPENSE').forEach(t => {
     const day = t.date.getDay();
-    daySpend[day] += Number(t.amount);
+    daySpend[day]! += Number(t.amount);
   });
 
   let maxDay = 0;
   let maxAmount = 0;
   for (let d = 0; d < 7; d++) {
-    if (daySpend[d] > maxAmount) {
-      maxAmount = daySpend[d];
+    if (daySpend[d]! > maxAmount) {
+      maxAmount = daySpend[d]!;
       maxDay = d;
     }
   }

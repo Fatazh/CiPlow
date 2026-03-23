@@ -74,7 +74,7 @@ export function useAuth() {
   }
 
   // ── Update Profile ──────────────────────────────────────────
-  const updateUser = async (data: { name?: string; email?: string; avatar?: string }) => {
+  const updateUser = async (data: { name?: string; email?: string; avatar?: string; currency?: string }) => {
     try {
       const res = await $fetch<{ ok: boolean; data: User }>('/api/auth/me', {
         method: 'PUT',

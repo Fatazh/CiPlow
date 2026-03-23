@@ -75,10 +75,12 @@ const chartOptions = computed<ChartOptions<'doughnut'>>(() => ({
       callbacks: {
         label: (ctx) => {
           const cat = props.categories[ctx.dataIndex]
+          if (!cat) return ''
           return ` ${formatIDR(cat.amount)}  (${cat.percentage.toFixed(1)}%)`
         },
         title: (items) => {
-          const cat = props.categories[items[0].dataIndex]
+          const cat = items[0] ? props.categories[items[0].dataIndex] : undefined
+          if (!cat) return ''
           return `${cat.icon}  ${cat.name}`
         },
       },

@@ -16,6 +16,8 @@ export default defineEventHandler(async (event) => {
         select: {
           transactionsFrom: true,
           transactionsTo: true,
+          recurringTransactionsFrom: true,
+          recurringTransactionsTo: true,
         },
       },
     },
@@ -23,11 +25,11 @@ export default defineEventHandler(async (event) => {
 
   if (!existing) throw createError({ statusCode: 404, message: 'Wallet tidak ditemukan' })
 
-  const txCount = existing._count.transactionsFrom + existing._count.transactionsTo
+  const txCount = existing._count.transactionsFrom + existing._count.transactionsTo + existing._count.recurringTransactionsFrom + existing._count.recurringTransactionsTo
   if (txCount > 0) {
     throw createError({
       statusCode: 409,
-      message: `Wallet ini memiliki ${txCount} transaksi. Hapus transaksi terlebih dahulu atau pindahkan ke wallet lain.`,
+      message: `Wallet ini memiliki ${txCount} transaksi (termasuk rutin). Hapus transaksi terlebih dahulu atau pindahkan ke wallet lain.`,
     })
   }
 

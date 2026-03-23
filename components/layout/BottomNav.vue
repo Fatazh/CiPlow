@@ -7,21 +7,32 @@ import {
   UserIcon,
 } from 'lucide-vue-next'
 
+import type { FunctionalComponent } from 'vue'
+import type { LucideProps } from 'lucide-vue-next'
+
 // ── Route awareness ────────────────────────────────────────────
 const route = useRoute()
 
-const navItems = [
+interface NavItem {
+  id: string
+  label: string
+  icon: FunctionalComponent<LucideProps>
+  to: string
+  exact: boolean
+}
+
+const navItems: [NavItem, NavItem, NavItem, NavItem] = [
   {
     id: 'home',
     label: 'Beranda',
-    icon: HomeIcon,
+    icon: HomeIcon as any,
     to: '/',
     exact: true,
   },
   {
     id: 'analytics',
     label: 'Analitik',
-    icon: BarChart3Icon,
+    icon: BarChart3Icon as any,
     to: '/analytics',
     exact: false,
   },
@@ -29,20 +40,20 @@ const navItems = [
   {
     id: 'master',
     label: 'Master',
-    icon: DatabaseIcon,
+    icon: DatabaseIcon as any,
     to: '/master-data',
     exact: false,
   },
   {
     id: 'profile',
     label: 'Profil',
-    icon: UserIcon,
+    icon: UserIcon as any,
     to: '/profile',
     exact: false,
   },
 ]
 
-const isActive = (item: (typeof navItems)[0]): boolean => {
+const isActive = (item: NavItem): boolean => {
   if (item.exact) return route.path === item.to
   return route.path.startsWith(item.to)
 }

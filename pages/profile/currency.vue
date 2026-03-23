@@ -1,6 +1,23 @@
 <script setup lang="ts">
+import { useUserStore } from '~/stores/user'
+
 useHead({ title: "Mata Uang — CashPlow" });
 const router = useRouter();
+const userStore = useUserStore();
+
+const currencies = [
+    { code: 'IDR', label: 'Rupiah (IDR)', symbol: 'Rp' },
+    { code: 'USD', label: 'US Dollar (USD)', symbol: '$' },
+    { code: 'EUR', label: 'Euro (EUR)', symbol: '€' },
+    { code: 'SGD', label: 'Singapore Dollar (SGD)', symbol: 'S$' },
+    { code: 'JPY', label: 'Japanese Yen (JPY)', symbol: '¥' },
+    { code: 'MYR', label: 'Malaysian Ringgit (MYR)', symbol: 'RM' },
+]
+
+const selectCurrency = (code: string) => {
+    userStore.setCurrency(code);
+    router.back();
+}
 </script>
 
 <template>
@@ -49,35 +66,33 @@ const router = useRouter();
                             <h1
                                 class="text-lg font-bold text-gray-800 dark:text-gray-100"
                             >
-                                Mata Uang
+                                Mata Uang Utama
                             </h1>
                             <div class="w-10"></div>
                         </div>
 
-                        <div class="text-center space-y-4 py-4">
-                            <div
-                                class="w-20 h-20 rounded-full bg-primary-50 dark:bg-primary-950/30 text-primary-500 flex items-center justify-center text-4xl mx-auto mb-2"
-                            >
-                                💱
-                            </div>
-                            <h2
-                                class="text-xl font-bold text-gray-800 dark:text-gray-100"
-                            >
-                                Fitur Segera Hadir
-                            </h2>
-                            <p
-                                class="text-sm text-gray-500 dark:text-gray-400 max-w-[280px] mx-auto leading-relaxed"
-                            >
-                                Pengaturan multi-mata uang sedang dalam tahap
-                                pengembangan. Saat ini aplikasi menggunakan
-                                <b>IDR (Rupiah)</b> sebagai mata uang default.
+                        <div class="space-y-4">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                Pilih mata uang utama untuk tampilan saldo dan analitik Anda.
                             </p>
 
                             <button
-                                @click="router.back()"
-                                class="w-full mt-6 py-4 rounded-2xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-bold shadow-lg shadow-primary-500/30 transition-all active:scale-95"
+                                v-for="currency in currencies"
+                                :key="currency.code"
+                                @click="selectCurrency(currency.code)"
+                                class="w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200"
+                                :class="userStore.currency === currency.code ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30' : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'"
                             >
-                                Mengerti
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center font-bold text-gray-700 dark:text-gray-200">
+                                        {{ currency.symbol }}
+                                    </div>
+                                    <span class="font-semibold text-gray-800 dark:text-gray-100">{{ currency.label }}</span>
+                                </div>
+                                
+                                <div v-if="userStore.currency === currency.code" class="w-6 h-6 rounded-full bg-primary-500 text-white flex items-center justify-center">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                </div>
                             </button>
                         </div>
                     </div>

@@ -48,6 +48,13 @@ enum BudgetPeriod {
   YEARLY
 }
 
+enum RecurringInterval {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
 // ─── Models ──────────────────────────────────────────────────
 
 model User {
@@ -64,6 +71,7 @@ model User {
   wallets      Wallet[]
   categories   Category[]
   transactions Transaction[]
+  recurringTransactions RecurringTransaction[]
   budgets      Budget[]
   sessions     Session[]
 
@@ -88,6 +96,7 @@ model Wallet {
   id          String     @id @default(cuid())
   name        String
   type        WalletType @default(CASH)
+  currency    String     @default("IDR") // Added for Multi-currency
   balance     Decimal    @default(0) @db.Decimal(15, 2)
   color       String     @default("#10b981")
   icon        String     @default("wallet")
@@ -101,6 +110,9 @@ model Wallet {
 
   transactionsFrom Transaction[] @relation("WalletFrom")
   transactionsTo   Transaction[] @relation("WalletTo")
+
+  recurringTransactionsFrom RecurringTransaction[] @relation("RecurringWalletFrom")
+  recurringTransactionsTo   RecurringTransaction[] @relation("RecurringWalletTo")
 
   @@index([userId])
   @@map("wallets")
@@ -121,6 +133,7 @@ model Category {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   transactions Transaction[]
+  recurringTransactions RecurringTransaction[]
   budgets      Budget[]
 
   @@index([userId])
@@ -139,6 +152,10 @@ model Transaction {
   // New Detail Fields
   quantity    Int?            @default(1)
   unitPrice   Decimal?        @db.Decimal(15, 2)
+
+  // Multi-Currency fields for transfers
+  targetAmount Decimal?       @db.Decimal(15, 2)
+  exchangeRate Decimal?       @db.Decimal(15, 6)
 
   // Promo Fields
   isPromo      Boolean    @default(false)
@@ -191,4 +208,59 @@ model Budget {
   @@index([userId])
   @@index([userId, year, month])
   @@map("budgets")
+}
+
+model RecurringTransaction {
+  id          String          @id @default(cuid())
+  amount      Decimal         @db.Decimal(15, 2)
+  type        TransactionType
+  description String?
+  notes       String?
+  // New Detail Fields
+  quantity    Int?            @default(1)
+  unitPrice   Decimal?        @db.Decimal(15, 2)
+
+  // Promo Fields
+  isPromo      Boolean    @default(false)
+  promoType    PromoType?
+  promoValue   Decimal?   @db.Decimal(15, 2)
+  promoDetails String?
+
+  interval    RecurringInterval
+  startDate   DateTime
+  nextDate    DateTime
+  endDate     DateTime?
+  isActive    Boolean         @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId     String
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  walletFromId String?
+  walletFrom   Wallet? @relation("RecurringWalletFrom", fields: [walletFromId], references: [id])
+
+  walletToId String?
+  walletTo   Wallet? @relation("RecurringWalletTo", fields: [walletToId], references: [id])
+
+  @@index([userId])
+  @@index([userId, type])
+  @@index([nextDate])
+  @@map("recurring_transactions")
+}
+
+model ExchangeRate {
+  id           String   @id @default(cuid())
+  baseCurrency String
+  targetCurrency String
+  rate         Decimal  @db.Decimal(15, 6)
+  date         DateTime @default(now())
+
+  @@unique([baseCurrency, targetCurrency, date])
+  @@index([baseCurrency, targetCurrency])
+  @@map("exchange_rates")
 }

@@ -56,9 +56,9 @@ const router = useRouter();
 
                         <div class="text-center space-y-5 py-4">
                             <div
-                                class="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-3xl font-black mx-auto shadow-xl shadow-emerald-500/20"
+                                class="w-20 h-20 flex items-center justify-center mx-auto drop-shadow-sm"
                             >
-                                P
+                                <img src="/logo.png" alt="Logo" class="w-16 h-16 object-contain" />
                             </div>
 
                             <div>
@@ -70,7 +70,7 @@ const router = useRouter();
                                 <p
                                     class="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1"
                                 >
-                                    Versi 1.0.0
+                                    Versi 1.0.1
                                 </p>
                             </div>
 

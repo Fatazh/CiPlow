@@ -81,6 +81,13 @@ const accountMenus = [
         comingSoon: false,
     },
     {
+        icon: "🔄",
+        label: "Transaksi Berulang",
+        desc: "Atur jadwal transaksi otomatis",
+        action: "recurring",
+        comingSoon: false,
+    },
+    {
         icon: "🔔",
         label: "Notifikasi",
         desc: "Atur preferensi notifikasi",
@@ -131,7 +138,7 @@ const appMenus = [
     {
         icon: "ℹ️",
         label: "Tentang App",
-        desc: "Versi 1.0.0 — CashPlow Budget Tracker",
+        desc: "Versi 1.0.2 — CashPlow Budget Tracker",
         action: "about",
         comingSoon: false,
     },
@@ -177,6 +184,7 @@ const handleAction = (action: string) => {
             "currency",
             "about",
             "security",
+            "recurring",
             "export",
             "import",
         ].includes(action)
@@ -646,18 +654,22 @@ const handleAction = (action: string) => {
         <!-- App version footer -->
         <div class="flex flex-col items-center gap-1 pb-2">
             <div class="flex items-center gap-2">
-                <span
-                    class="w-7 h-7 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-black"
+                <div
+                    class="w-7 h-7 flex items-center justify-center drop-shadow-sm"
                 >
-                    P
-                </span>
+                    <img
+                        src="/logo.png"
+                        alt="Logo"
+                        class="w-6 h-6 object-contain"
+                    />
+                </div>
                 <span class="text-sm font-bold text-gradient">CashPlow</span>
             </div>
             <p class="text-[10px] text-gray-300 dark:text-gray-600 font-medium">
-                Budget Tracker · v1.0.0
+                Budget Tracker · v1.0.1
             </p>
             <p class="text-[10px] text-gray-300 dark:text-gray-600">
-                © 2025 CashPlow. All rights reserved.
+                © 2026 CashPlow. All rights reserved.
             </p>
         </div>
 

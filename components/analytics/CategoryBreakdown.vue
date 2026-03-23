@@ -135,7 +135,7 @@ const chartOptions = computed<ChartOptions<'doughnut'>>(() => ({
             ...topItems.value,
             ...(hasRest.value ? [{ name: 'Lainnya', icon: '📦' }] : []),
           ]
-          const item = allItems[items[0].dataIndex]
+          const item = items[0] ? allItems[items[0].dataIndex] : undefined
           if (!item) return ''
           return `${item.icon}  ${item.name}`
         },
@@ -293,13 +293,13 @@ const hoveredIndex = ref<number | null>(null)
           ">
             <template v-if="hoveredIndex !== null && topItems[hoveredIndex]">
               <span class="text-xl leading-none mb-1">
-                {{ topItems[hoveredIndex].icon }}
+                {{ topItems[hoveredIndex]?.icon }}
               </span>
               <span class="text-[11px] font-bold text-gray-700 dark:text-gray-200 text-center leading-tight max-w-[72px]">
-                {{ formatCompact(topItems[hoveredIndex].amount) }}
+                {{ formatCompact(topItems[hoveredIndex]?.amount || 0) }}
               </span>
               <span class="text-[9px] text-gray-400 dark:text-gray-500 font-medium mt-0.5">
-                {{ topItems[hoveredIndex].percentage.toFixed(1) }}%
+                {{ topItems[hoveredIndex]?.percentage.toFixed(1) }}%
               </span>
             </template>
             <template v-else>

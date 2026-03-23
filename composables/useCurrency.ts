@@ -1,42 +1,57 @@
 // composables/useCurrency.ts
-// IDR currency formatting utilities for CashPlow
+// Currency formatting utilities for CashPlow
+
+import { useUserStore } from '~/stores/user'
 
 export const useCurrency = () => {
+  const userStore = useUserStore()
+
   /**
-   * Format a number as full IDR currency
-   * e.g. 1500000 → "Rp 1.500.000"
+   * Format a number as full currency
+   * e.g. 1500000 → "Rp 1.500.000" (if IDR)
    */
-  const formatIDR = (amount: number | string | null | undefined): string => {
+  const formatCurrency = (amount: number | string | null | undefined, currencyCode?: string): string => {
+    const code = currencyCode || userStore.currency || 'IDR'
     const num = Number(amount ?? 0);
-    if (isNaN(num)) return "Rp 0";
+    if (isNaN(num)) return `0`;
 
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
-      currency: "IDR",
+      currency: code,
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 2,
     }).format(num);
   };
 
   /**
-   * Format a number as compact IDR
+   * Format a number as full IDR currency (Legacy alias)
+   */
+  const formatIDR = (amount: number | string | null | undefined): string => {
+    return formatCurrency(amount, userStore.currency);
+  };
+
+  /**
+   * Format a number as compact IDR (Legacy)
    * e.g. 1500000 → "Rp 1,5 jt" | 1500000000 → "Rp 1,5 M"
    */
   const formatCompact = (
     amount: number | string | null | undefined,
+    currencyCode?: string
   ): string => {
+    const code = currencyCode || userStore.currency || 'IDR'
     const num = Number(amount ?? 0);
-    if (isNaN(num)) return "Rp 0";
+    if (isNaN(num)) return `0`;
 
     const abs = Math.abs(num);
     const sign = num < 0 ? "-" : "";
+    const prefix = code === 'IDR' ? 'Rp ' : `${code} `;
 
     if (abs >= 1_000_000_000) {
       const val = (abs / 1_000_000_000).toLocaleString("id-ID", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 1,
       });
-      return `${sign}Rp ${val} M`;
+      return `${sign}${prefix}${val} M`;
     }
 
     if (abs >= 1_000_000) {
@@ -44,22 +59,22 @@ export const useCurrency = () => {
         minimumFractionDigits: 0,
         maximumFractionDigits: 1,
       });
-      return `${sign}Rp ${val} jt`;
+      return `${sign}${prefix}${val} jt`;
     }
 
-    if (abs >= 1_000) {
+    if (abs >= 1_000 && code === 'IDR') {
       const val = (abs / 1_000).toLocaleString("id-ID", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       });
-      return `${sign}Rp ${val} rb`;
+      return `${sign}${prefix}${val} rb`;
     }
 
-    return formatIDR(num);
+    return formatCurrency(num, code);
   };
 
   /**
-   * Format a number as plain IDR without symbol
+   * Format a number as plain without symbol
    * e.g. 1500000 → "1.500.000"
    */
   const formatPlain = (amount: number | string | null | undefined): string => {
@@ -73,28 +88,30 @@ export const useCurrency = () => {
   };
 
   /**
-   * Parse an IDR-formatted string back to number
-   * e.g. "Rp 1.500.000" → 1500000
+   * Parse a formatted string back to number
    */
-  const parseIDR = (value: string): number => {
+  const parseCurrency = (value: string): number => {
     const cleaned = value
-      .replace(/[Rp\s]/g, "")
+      .replace(/[A-Za-z\s]/g, "") // Remove any currency symbol or space
       .replace(/\./g, "")
       .replace(",", ".");
     const num = parseFloat(cleaned);
     return isNaN(num) ? 0 : num;
   };
+  
+  // Legacy alias
+  const parseIDR = parseCurrency;
 
   /**
    * Format with sign prefix for income/expense display
-   * e.g. income 50000 → "+Rp 50.000" | expense 50000 → "-Rp 50.000"
    */
   const formatSigned = (
     amount: number | string | null | undefined,
     type: "income" | "expense" | "transfer" = "expense",
+    currencyCode: string = 'IDR'
   ): string => {
     const num = Math.abs(Number(amount ?? 0));
-    const formatted = formatIDR(num);
+    const formatted = formatCurrency(num, currencyCode);
     if (type === "income") return `+${formatted}`;
     if (type === "expense") return `-${formatted}`;
     return formatted;

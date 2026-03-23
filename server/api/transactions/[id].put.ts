@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { PromoType } from '@prisma/client'
 import prisma from '~/server/utils/prisma'
 import { updateBudgetSpent } from '~/server/utils/budget'
+import { recalculateWalletBalance } from '~/server/utils/wallet'
 
 const transactionUpdateSchema = z.object({
   amount: z.number().positive('Nominal harus lebih dari 0').optional(),
@@ -46,6 +47,17 @@ export default defineEventHandler(async (event) => {
   const newCategoryId = body.categoryId ?? existing.categoryId
   const newWalletFromId = body.walletFromId !== undefined ? body.walletFromId : existing.walletFromId
   const newWalletToId = body.walletToId !== undefined ? body.walletToId : existing.walletToId
+  
+  const newQuantity = body.quantity ?? existing.quantity ?? 1
+  const newUnitPrice = body.unitPrice ?? (existing.unitPrice !== null ? Number(existing.unitPrice) : undefined)
+  const newIsPromo = body.isPromo ?? existing.isPromo
+
+  // ── Validation: amount vs quantity * unitPrice ────────────────
+  if (newQuantity !== undefined && newUnitPrice !== undefined && !newIsPromo) {
+    if (newAmount !== newQuantity * newUnitPrice) {
+      throw createError({ statusCode: 400, message: 'Total nominal harus sama dengan kuantitas dikali harga satuan' })
+    }
+  }
 
   if (newAmount <= 0) {
     throw createError({ statusCode: 400, message: 'Nominal harus lebih dari 0' })
@@ -113,35 +125,60 @@ export default defineEventHandler(async (event) => {
   const oldWalletFromId = existing.walletFromId
   const oldWalletToId = existing.walletToId
 
-  // ── Atomic: reverse old balances → update transaction → apply new balances ──
+  // Handle Multi-Currency Conversion
+  let targetAmount: number | null = null
+  let exchangeRate: number | null = null
+
+  const baseCurrency = user.currency // User's primary currency
+
+  const wFrom = newWalletFromId ? await prisma.wallet.findFirst({ where: { id: newWalletFromId, userId: user.id } }) : null
+  const wTo = newWalletToId ? await prisma.wallet.findFirst({ where: { id: newWalletToId, userId: user.id } }) : null
+
+  if (newType === 'TRANSFER' && wFrom && wTo) {
+    if (wFrom.currency !== wTo.currency) {
+      try {
+        const rateRes = await $fetch<any>(`/api/exchange-rates?base=${wFrom.currency}&target=${wTo.currency}`)
+        if (rateRes && rateRes.rate) {
+          exchangeRate = rateRes.rate
+          targetAmount = newAmount * (exchangeRate ?? 1)
+        }
+      } catch (e) {
+        console.error('Failed to fetch exchange rate during update', e)
+        exchangeRate = 1
+        targetAmount = newAmount
+      }
+    } else {
+      targetAmount = newAmount
+      exchangeRate = 1
+    }
+  } else {
+    // For INCOME and EXPENSE, store value in USER'S primary currency
+    const walletCurrency = newType === 'INCOME' ? wTo?.currency : wFrom?.currency
+    
+    if (walletCurrency && walletCurrency !== baseCurrency) {
+      try {
+        const rateRes = await $fetch<any>(`/api/exchange-rates?base=${walletCurrency}&target=${baseCurrency}`)
+        if (rateRes && rateRes.rate) {
+          exchangeRate = rateRes.rate
+          targetAmount = newAmount * (exchangeRate ?? 1)
+        }
+      } catch (e) {
+        console.error('Failed to fetch exchange rate during update for reporting', e)
+        exchangeRate = 1
+        targetAmount = newAmount
+      }
+    } else {
+      targetAmount = newAmount
+      exchangeRate = 1
+    }
+  }
+
+  // ── Atomic: update transaction → apply budget & new balances ──
   const txResult = await prisma.$transaction(async (tx) => {
 
-    // ── Step 1: Reverse old transaction's effect ──────────────
-    if (oldType === 'EXPENSE' && oldWalletFromId) {
-      await tx.wallet.update({
-        where: { id: oldWalletFromId },
-        data: { balance: { increment: oldAmount } },
-      })
-      // Reverse old budget spent
+    // ── Step 1: Reverse old budget spent (only for EXPENSE) ────────
+    if (oldType === 'EXPENSE') {
       await updateBudgetSpent(tx, user.id, existing.categoryId, existing.date, -oldAmount)
-    } else if (oldType === 'INCOME' && oldWalletToId) {
-      await tx.wallet.update({
-        where: { id: oldWalletToId },
-        data: { balance: { decrement: oldAmount } },
-      })
-    } else if (oldType === 'TRANSFER') {
-      if (oldWalletFromId) {
-        await tx.wallet.update({
-          where: { id: oldWalletFromId },
-          data: { balance: { increment: oldAmount } },
-        })
-      }
-      if (oldWalletToId) {
-        await tx.wallet.update({
-          where: { id: oldWalletToId },
-          data: { balance: { decrement: oldAmount } },
-        })
-      }
     }
 
     // ── Step 2: Update the transaction ────────────────────────
@@ -164,37 +201,28 @@ export default defineEventHandler(async (event) => {
         ...(body.promoType !== undefined && { promoType: body.promoType }),
         ...(body.promoValue !== undefined && { promoValue: body.promoValue }),
         ...(body.promoDetails !== undefined && { promoDetails: body.promoDetails?.trim() || null }),
+        // Multi-currency fields (Reset or update)
+        targetAmount,
+        exchangeRate,
       },
       include: { category: true, walletFrom: true, walletTo: true },
     })
 
-    // ── Step 3: Apply new transaction's effect ────────────────
-    if (newType === 'EXPENSE' && newWalletFromId) {
-      await tx.wallet.update({
-        where: { id: newWalletFromId },
-        data: { balance: { decrement: newAmount } },
-      })
-      // Apply new budget spent
+    // ── Step 3: Apply new budget spent (only for EXPENSE) ──────────
+    if (newType === 'EXPENSE') {
       const finalDate = updated.date
       await updateBudgetSpent(tx, user.id, updated.categoryId, finalDate, newAmount)
-    } else if (newType === 'INCOME' && newWalletToId) {
-      await tx.wallet.update({
-        where: { id: newWalletToId },
-        data: { balance: { increment: newAmount } },
-      })
-    } else if (newType === 'TRANSFER') {
-      if (newWalletFromId) {
-        await tx.wallet.update({
-          where: { id: newWalletFromId },
-          data: { balance: { decrement: newAmount } },
-        })
-      }
-      if (newWalletToId) {
-        await tx.wallet.update({
-          where: { id: newWalletToId },
-          data: { balance: { increment: newAmount } },
-        })
-      }
+    }
+
+    // ── Step 4: Recalculate affected wallet balances ──────────────
+    const walletsToRecalculate = new Set<string>()
+    if (oldWalletFromId) walletsToRecalculate.add(oldWalletFromId)
+    if (oldWalletToId) walletsToRecalculate.add(oldWalletToId)
+    if (newWalletFromId) walletsToRecalculate.add(newWalletFromId)
+    if (newWalletToId) walletsToRecalculate.add(newWalletToId)
+
+    for (const walletId of walletsToRecalculate) {
+      await recalculateWalletBalance(tx, walletId)
     }
 
     return updated

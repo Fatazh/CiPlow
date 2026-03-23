@@ -4,6 +4,7 @@
 import ExcelJS from 'exceljs'
 import prisma from '~/server/utils/prisma'
 import { updateBudgetSpent } from '~/server/utils/budget'
+import { recalculateWalletBalance } from '~/server/utils/wallet'
 
 export default defineEventHandler(async (event) => {
   const user = await requireAuth(event)
@@ -15,7 +16,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const file = formData[0]
-  if (!file.filename?.endsWith('.xlsx')) {
+  if (!file || !file.filename?.endsWith('.xlsx')) {
     throw createError({ statusCode: 400, message: 'Format file harus .xlsx' })
   }
 
@@ -98,20 +99,22 @@ export default defineEventHandler(async (event) => {
       data: transactionsToCreate
     })
 
-    // Update wallet balances & budget spent for each (Optimized for small-medium imports)
+    // Update budget spent for each
     for (const data of transactionsToCreate) {
-      if (data.type === 'EXPENSE' && data.walletFromId) {
-        await tx.wallet.update({
-          where: { id: data.walletFromId },
-          data: { balance: { decrement: data.amount } }
-        })
+      if (data.type === 'EXPENSE') {
         await updateBudgetSpent(tx, user.id, data.categoryId, data.date, data.amount)
-      } else if (data.type === 'INCOME' && data.walletToId) {
-        await tx.wallet.update({
-          where: { id: data.walletToId },
-          data: { balance: { increment: data.amount } }
-        })
       }
+    }
+
+    // Recalculate affected wallet balances once at the end
+    const affectedWallets = new Set<string>()
+    transactionsToCreate.forEach(t => {
+      if (t.walletFromId) affectedWallets.add(t.walletFromId)
+      if (t.walletToId) affectedWallets.add(t.walletToId)
+    })
+
+    for (const walletId of affectedWallets) {
+      await recalculateWalletBalance(tx, walletId)
     }
 
     return createdCount

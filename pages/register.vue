@@ -58,7 +58,7 @@ const handleRegister = async () => {
                 <div
                     class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 bg-gradient-to-br from-blue-400 to-emerald-500 shadow-xl shadow-emerald-500/30"
                 >
-                    <span class="text-2xl font-extrabold text-white">₽</span>
+                    <img src="/logo.png" alt="Logo" class="w-10 h-10 object-contain drop-shadow-sm" />
                 </div>
                 <h1
                     class="text-2xl font-extrabold text-gray-800 dark:text-gray-100"

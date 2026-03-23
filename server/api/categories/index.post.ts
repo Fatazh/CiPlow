@@ -22,6 +22,18 @@ export default defineEventHandler(async (event) => {
   }
   const body = result.data
 
+  // Check for duplicate names
+  const existing = await prisma.category.findFirst({
+    where: { 
+      userId: user.id, 
+      name: { equals: body.name.trim(), mode: 'insensitive' }, 
+      type: body.type 
+    }
+  })
+  if (existing) {
+    throw createError({ statusCode: 409, message: `Kategori "${body.name}" sudah ada untuk tipe ini` })
+  }
+
   const category = await prisma.$transaction(async (tx) => {
   // If setting as default, remove default status from all other categories of SAME TYPE
   if (body.isDefault) {

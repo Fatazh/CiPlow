@@ -7,6 +7,7 @@ import prisma from '~/server/utils/prisma'
 const walletSchema = z.object({
   name: z.string().trim().min(2, 'Nama wallet minimal 2 karakter'),
   type: z.enum(['CASH', 'BANK', 'E_WALLET', 'INVESTMENT', 'OTHER'], { message: 'Tipe wallet tidak valid' }),
+  currency: z.string().optional(),
   balance: z.number().optional(),
   color: z.string().optional(),
   icon: z.string().optional(),
@@ -23,6 +24,17 @@ export default defineEventHandler(async (event) => {
   }
   const body = result.data
 
+  // Check for duplicate names
+  const existing = await prisma.wallet.findFirst({
+    where: { 
+      userId: user.id, 
+      name: { equals: body.name.trim(), mode: 'insensitive' } 
+    }
+  })
+  if (existing) {
+    throw createError({ statusCode: 409, message: `Dompet "${body.name}" sudah ada` })
+  }
+
   const wallet = await prisma.$transaction(async (tx) => {
     // If setting as default, remove default status from all other wallets of this user
     if (body.isDefault) {
@@ -36,6 +48,7 @@ export default defineEventHandler(async (event) => {
       data: {
         name: body.name.trim(),
         type: body.type as any,
+        currency: body.currency ?? 'IDR',
         balance: body.balance ?? 0,
         color: body.color ?? '#10b981',
         icon: body.icon ?? 'wallet',

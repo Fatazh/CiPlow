@@ -68,6 +68,7 @@ const walletForm = reactive({
     id: "",
     name: "",
     type: "CASH",
+    currency: "IDR",
     balance: 0,
     color: "#10b981",
     icon: "💵",
@@ -100,6 +101,7 @@ const openWalletCreate = () => {
         id: "",
         name: "",
         type: "CASH",
+        currency: "IDR",
         balance: 0,
         color: "#10b981",
         icon: "💵",
@@ -115,6 +117,7 @@ const openWalletEdit = (wallet: any) => {
         id: wallet.id,
         name: wallet.name,
         type: wallet.type,
+        currency: wallet.currency || "IDR",
         balance: wallet.balance,
         color: wallet.color,
         icon: walletIcons[wallet.type] ?? "💵",
@@ -135,6 +138,7 @@ const saveWallet = async () => {
                 body: {
                     name: walletForm.name,
                     type: walletForm.type,
+                    currency: walletForm.currency,
                     balance: walletForm.balance,
                     icon: walletForm.icon,
                     isDefault: walletForm.isDefault,
@@ -148,6 +152,7 @@ const saveWallet = async () => {
                 body: {
                     name: walletForm.name,
                     type: walletForm.type,
+                    currency: walletForm.currency,
                     balance: walletForm.balance,
                     icon: walletForm.icon,
                     isDefault: walletForm.isDefault,
@@ -1287,6 +1292,26 @@ const onWalletBalanceInput = (e: Event) => {
                             <span>{{ wt.label }}</span>
                         </button>
                     </div>
+                </div>
+
+                <!-- Currency -->
+                <div>
+                    <label
+                        class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block"
+                    >
+                        Mata Uang
+                    </label>
+                    <select
+                        v-model="walletForm.currency"
+                        class="input w-full bg-white dark:bg-surface-800"
+                    >
+                        <option value="IDR">IDR (Rupiah)</option>
+                        <option value="USD">USD (US Dollar)</option>
+                        <option value="EUR">EUR (Euro)</option>
+                        <option value="SGD">SGD (Singapore Dollar)</option>
+                        <option value="JPY">JPY (Japanese Yen)</option>
+                        <option value="MYR">MYR (Malaysian Ringgit)</option>
+                    </select>
                 </div>
 
                 <!-- Balance -->
