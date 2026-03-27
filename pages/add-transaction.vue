@@ -5,6 +5,8 @@ useHead({ title: "Tambah Transaksi — CashPlow" });
 
 const router = useRouter();
 const { formatIDR } = useCurrency();
+const isOnline = useOnline();
+const { saveOffline } = useOfflineSync();
 
 // ── Toast ─────────────────────────────────────────────────────
 const toast = reactive({
@@ -228,65 +230,71 @@ const submit = async () => {
     if (!canSubmit.value || saving.value) return;
     saving.value = true;
 
+    const payload = {
+        amount: form.amount,
+        type: txType.value,
+        categoryId: form.categoryId,
+        walletFromId: form.walletFromId || undefined,
+        walletToId: form.walletToId || undefined,
+        description: form.description || undefined,
+        notes: form.notes || undefined,
+        date: form.date ? new Date(form.date).toISOString() : undefined,
+        // Detail fields
+        quantity: txType.value === "EXPENSE" ? form.quantity : undefined,
+        unitPrice: txType.value === "EXPENSE" ? form.unitPrice : undefined,
+        // Promo fields
+        isPromo: form.isPromo,
+        promoType: form.isPromo ? form.promoType : undefined,
+        promoValue:
+            form.isPromo && form.promoType !== "BUY_X_GET_Y"
+                ? form.promoValue
+                : undefined,
+        promoDetails:
+            form.isPromo && form.promoType === "BUY_X_GET_Y"
+                ? form.promoDetails
+                : undefined,
+    };
+
     try {
-        const payload = {
-            amount: form.amount,
-            type: txType.value,
-            categoryId: form.categoryId,
-            walletFromId: form.walletFromId || undefined,
-            walletToId: form.walletToId || undefined,
-            description: form.description || undefined,
-            notes: form.notes || undefined,
-            date: form.date ? new Date(form.date).toISOString() : undefined,
-            // Detail fields
-            quantity: txType.value === "EXPENSE" ? form.quantity : undefined,
-            unitPrice: txType.value === "EXPENSE" ? form.unitPrice : undefined,
-            // Promo fields
-            isPromo: form.isPromo,
-            promoType: form.isPromo ? form.promoType : undefined,
-            promoValue:
-                form.isPromo && form.promoType !== "BUY_X_GET_Y"
-                    ? form.promoValue
-                    : undefined,
-            promoDetails:
-                form.isPromo && form.promoType === "BUY_X_GET_Y"
-                    ? form.promoDetails
-                    : undefined,
-        };
-
-        // Always create the immediate transaction
-        await $fetch("/api/transactions", {
-            method: "POST",
-            body: payload,
-        });
-
-        // If recurring is enabled, calculate the NEXT date and create the recurring schedule
-        if (form.isRecurring) {
-            let nextDate = new Date(form.date || new Date());
-            if (form.recurringInterval === 'DAILY') {
-                nextDate.setDate(nextDate.getDate() + 1);
-            } else if (form.recurringInterval === 'WEEKLY') {
-                nextDate.setDate(nextDate.getDate() + 7);
-            } else if (form.recurringInterval === 'MONTHLY') {
-                nextDate.setMonth(nextDate.getMonth() + 1);
-            } else if (form.recurringInterval === 'YEARLY') {
-                nextDate.setFullYear(nextDate.getFullYear() + 1);
-            }
-
-            const recurringPayload = {
-                ...payload,
-                interval: form.recurringInterval,
-                startDate: nextDate.toISOString(), // Start on the next cycle, since current is handled above
-                endDate: form.recurringEndDate ? new Date(form.recurringEndDate).toISOString() : undefined,
-            };
-
-            await $fetch("/api/recurring-transactions", {
+        if (isOnline.value) {
+            // Online: Always create the immediate transaction
+            await $fetch("/api/transactions", {
                 method: "POST",
-                body: recurringPayload,
+                body: payload,
             });
+
+            // If recurring is enabled, calculate the NEXT date and create the recurring schedule
+            if (form.isRecurring) {
+                let nextDate = new Date(form.date || new Date());
+                if (form.recurringInterval === 'DAILY') {
+                    nextDate.setDate(nextDate.getDate() + 1);
+                } else if (form.recurringInterval === 'WEEKLY') {
+                    nextDate.setDate(nextDate.getDate() + 7);
+                } else if (form.recurringInterval === 'MONTHLY') {
+                    nextDate.setMonth(nextDate.getMonth() + 1);
+                } else if (form.recurringInterval === 'YEARLY') {
+                    nextDate.setFullYear(nextDate.getFullYear() + 1);
+                }
+
+                const recurringPayload = {
+                    ...payload,
+                    interval: form.recurringInterval,
+                    startDate: nextDate.toISOString(), // Start on the next cycle, since current is handled above
+                    endDate: form.recurringEndDate ? new Date(form.recurringEndDate).toISOString() : undefined,
+                };
+
+                await $fetch("/api/recurring-transactions", {
+                    method: "POST",
+                    body: recurringPayload,
+                });
+            }
+            toast.message = form.isRecurring ? "Transaksi & Jadwal Berulang berhasil ditambahkan! 🎉" : "Transaksi berhasil ditambahkan! 🎉";
+        } else {
+            // Offline: Save locally
+            saveOffline(payload);
+            toast.message = "Kamu offline. Transaksi disimpan di HP-mu & akan disinkronkan nanti! 💾";
         }
 
-        toast.message = form.isRecurring ? "Transaksi & Jadwal Berulang berhasil ditambahkan! 🎉" : "Transaksi berhasil ditambahkan! 🎉";
         toast.type = "success";
         toast.show = true;
 
@@ -313,6 +321,7 @@ const typeColor = computed(() => {
             return "blue";
     }
 });
+
 </script>
 
 <template>

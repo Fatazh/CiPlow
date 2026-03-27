@@ -8,7 +8,8 @@ export default defineEventHandler(async (event) => {
   const user = await getUserFromSession(event)
 
   if (!user) {
-    throw createError({ statusCode: 401, message: 'Belum login' })
+    setResponseStatus(event, 401)
+    return { ok: false, message: 'Belum login' }
   }
 
   // Get quick stats

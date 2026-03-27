@@ -91,8 +91,21 @@ export function useAuth() {
 
   // ── Logout ─────────────────────────────────────────────────
   const logout = async () => {
+    // 1. Call server to delete session cookie
     await $fetch('/api/auth/logout', { method: 'POST' })
+    
+    // 2. Clear local device PIN from store and localStorage for security
+    if (import.meta.client) {
+      const userStore = useUserStore()
+      userStore.setPin('') // Reset PIN state
+      userStore.isLocked = false
+      localStorage.removeItem('ciplow_app_pin')
+    }
+
+    // 3. Reset local auth state
     user.value = null
+    
+    // 4. Redirect to login
     await router.push('/login')
   }
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // pages/login.vue — Login page
+import { ref, computed } from 'vue';
 
 definePageMeta({ layout: false });
 useHead({ title: "Login — CashPlow" });

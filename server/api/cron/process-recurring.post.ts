@@ -1,10 +1,12 @@
 import prisma from '~/server/utils/prisma'
 import { updateBudgetSpent } from '~/server/utils/budget'
-import { recalculateWalletBalance } from '~/server/utils/wallet'
+import { adjustWalletBalance } from '~/server/utils/wallet'
+import { getExchangeRate } from '~/server/utils/exchange'
 
 export default defineEventHandler(async (event) => {
   const now = new Date()
 
+  // Find all active recurring transactions where nextDate is in the past or today
   const dueTransactions = await prisma.recurringTransaction.findMany({
     where: {
       isActive: true,
@@ -16,63 +18,79 @@ export default defineEventHandler(async (event) => {
     }
   })
 
-  let processedCount = 0
+  let totalProcessed = 0
 
   for (const rt of dueTransactions) {
     await prisma.$transaction(async (tx) => {
       let currentProcessDate = new Date(rt.nextDate)
+      let occurrencesCount = 0
       
       // Catch-up loop: process all missed occurrences up to 'now'
       while (currentProcessDate <= now) {
-        // Multi-currency calculation for the occurrence
+        // Stop if we hit the end date
+        if (rt.endDate && currentProcessDate > rt.endDate) {
+          break
+        }
+
+        // Multi-currency calculation using utility
         let targetAmount: number | null = null
         let exchangeRate: number | null = null
 
-        if (rt.type === 'TRANSFER' && rt.walletFrom && rt.walletTo && rt.walletFrom.currency !== rt.walletTo.currency) {
-          try {
-            const rateRes = await $fetch<any>(`/api/exchange-rates?base=${rt.walletFrom.currency}&target=${rt.walletTo.currency}`)
-            if (rateRes && rateRes.rate) {
-              exchangeRate = rateRes.rate
-              targetAmount = Number(rt.amount) * (exchangeRate ?? 1)
-            }
-          } catch (e) {
-            console.error('Failed to fetch exchange rate for recurring transaction', e)
-            exchangeRate = 1
+        if (rt.type === 'TRANSFER' && rt.walletFrom && rt.walletTo) {
+          if (rt.walletFrom.currency !== rt.walletTo.currency) {
+            exchangeRate = await getExchangeRate(rt.walletFrom.currency, rt.walletTo.currency)
+            targetAmount = Number(rt.amount) * exchangeRate
+          } else {
             targetAmount = Number(rt.amount)
+            exchangeRate = 1
           }
+        } else {
+          // For Income/Expense, store target in User's base currency (not easily available here without fetching User)
+          // For now, assume base currency matches wallet or keep it 1:1 if unknown
+          targetAmount = Number(rt.amount)
+          exchangeRate = 1
         }
+
+        const amountNum = Number(rt.amount)
 
         // 1. Create the actual transaction
         await tx.transaction.create({
           data: {
             amount: rt.amount,
             type: rt.type,
-            description: rt.description || 'Recurring Transaction',
+            description: rt.description || 'Transaksi Rutin',
             notes: rt.notes,
-            date: new Date(currentProcessDate), // Make sure to use a copy of the date
+            date: new Date(currentProcessDate),
             userId: rt.userId,
             categoryId: rt.categoryId,
             walletFromId: rt.walletFromId,
             walletToId: rt.walletToId,
-            // Copied detail fields
             quantity: rt.quantity,
             unitPrice: rt.unitPrice,
             isPromo: rt.isPromo,
             promoType: rt.promoType,
             promoValue: rt.promoValue,
             promoDetails: rt.promoDetails,
-            // Currency fields
             targetAmount,
             exchangeRate
           },
         })
 
-        // Update budget directly for this specific occurrence
-        if (rt.type === 'EXPENSE') {
-          await updateBudgetSpent(tx, rt.userId, rt.categoryId, new Date(currentProcessDate), Number(rt.amount))
+        // 2. Update wallet balances incrementally for each occurrence
+        if (rt.walletFromId) {
+          await adjustWalletBalance(tx, rt.walletFromId, -amountNum)
+        }
+        if (rt.walletToId) {
+          const amountToAdd = rt.type === 'TRANSFER' ? (targetAmount || amountNum) : amountNum
+          await adjustWalletBalance(tx, rt.walletToId, amountToAdd)
         }
 
-        // 2. Calculate next date for the loop
+        // 3. Update budget
+        if (rt.type === 'EXPENSE') {
+          await updateBudgetSpent(tx, rt.userId, rt.categoryId, new Date(currentProcessDate), amountNum)
+        }
+
+        // 4. Advance the date for next occurrence
         if (rt.interval === 'DAILY') {
           currentProcessDate.setDate(currentProcessDate.getDate() + 1)
         } else if (rt.interval === 'WEEKLY') {
@@ -82,35 +100,18 @@ export default defineEventHandler(async (event) => {
         } else if (rt.interval === 'YEARLY') {
           currentProcessDate.setFullYear(currentProcessDate.getFullYear() + 1)
         }
-
-        // Stop processing if we hit the end date
-        if (rt.endDate && currentProcessDate > rt.endDate) {
-          break
-        }
         
-        processedCount++
+        occurrencesCount++
+        totalProcessed++
       }
 
-      // 3. Update wallet and budgets (Recalculate ONCE after all catch-ups are created)
-      if (rt.type === 'EXPENSE') {
-        // Just triggering a recalculation for budget could be tricky for catch-up
-        // We calculate budget inside the while loop for precision
-      }
-
-      if (rt.walletFromId) {
-        await recalculateWalletBalance(tx, rt.walletFromId)
-      }
-      if (rt.walletToId) {
-        await recalculateWalletBalance(tx, rt.walletToId)
-      }
-
-      // 4. Check if endDate is passed for final status
+      // Check if endDate is passed to deactivate
       let isActive = true
       if (rt.endDate && currentProcessDate > rt.endDate) {
         isActive = false
       }
 
-      // 5. Update RecurringTransaction pointer
+      // Update RecurringTransaction pointer and status
       await tx.recurringTransaction.update({
         where: { id: rt.id },
         data: {
@@ -121,5 +122,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  return { ok: true, processedCount }
+  return { ok: true, processedTransactions: totalProcessed }
 })
+

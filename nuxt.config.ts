@@ -202,4 +202,10 @@ export default defineNuxtConfig({
       defaultLocale: "id-ID",
     },
   },
+
+  vite: {
+    optimizeDeps: {
+      include: ["lucide-vue-next", "vue-chartjs", "chart.js"],
+    },
+  },
 });
