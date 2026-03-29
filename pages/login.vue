@@ -1,6 +1,5 @@
 <script setup lang="ts">
 // pages/login.vue — Login page
-import { ref, computed } from 'vue';
 
 definePageMeta({ layout: false });
 useHead({ title: "Login — CashPlow" });
@@ -10,6 +9,8 @@ const router = useRouter();
 
 const email = ref("");
 const password = ref("");
+const emailInput = ref<HTMLInputElement | null>(null);
+const passwordInput = ref<HTMLInputElement | null>(null);
 
 const error = ref("");
 const loading = ref(false);
@@ -19,7 +20,29 @@ const canSubmit = computed(
     () => email.value.trim().length > 0 && password.value.length >= 6,
 );
 
+// Browser autofill can populate DOM inputs without updating Vue refs.
+const syncFormFromInputs = () => {
+    if (emailInput.value?.value && email.value !== emailInput.value.value) {
+        email.value = emailInput.value.value;
+    }
+
+    if (
+        passwordInput.value?.value &&
+        password.value !== passwordInput.value.value
+    ) {
+        password.value = passwordInput.value.value;
+    }
+};
+
+onMounted(() => {
+    syncFormFromInputs();
+    requestAnimationFrame(syncFormFromInputs);
+    setTimeout(syncFormFromInputs, 150);
+    setTimeout(syncFormFromInputs, 600);
+});
+
 const handleLogin = async () => {
+    syncFormFromInputs();
     if (!canSubmit.value || loading.value) return;
     error.value = "";
     loading.value = true;
@@ -42,10 +65,12 @@ const handleLogin = async () => {
         <div class="w-full max-w-sm">
             <!-- Logo & Title -->
             <div class="text-center mb-8">
-                <div
-                    class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-xl shadow-emerald-500/30"
-                >
-                    <img src="/logo.png" alt="Logo" class="w-10 h-10 object-contain drop-shadow-sm" />
+                <div class="flex justify-center mb-8">
+                    <img
+                        src="/logo.png"
+                        alt="Logo"
+                        class="w-20 h-20 object-contain inset-shadow-sm"
+                    />
                 </div>
                 <h1
                     class="text-2xl font-extrabold text-gray-800 dark:text-gray-100"
@@ -106,11 +131,14 @@ const handleLogin = async () => {
                                 />
                             </svg>
                             <input
+                                ref="emailInput"
                                 v-model="email"
                                 type="email"
+                                name="email"
                                 class="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 dark:bg-surface-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 transition-all duration-200"
                                 placeholder="email@example.com"
                                 autocomplete="email"
+                                @change="syncFormFromInputs"
                             />
                         </div>
                     </div>
@@ -143,11 +171,14 @@ const handleLogin = async () => {
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                             </svg>
                             <input
+                                ref="passwordInput"
                                 v-model="password"
                                 :type="showPassword ? 'text' : 'password'"
+                                name="password"
                                 class="w-full pl-10 pr-12 py-3 rounded-xl bg-gray-50 dark:bg-surface-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 transition-all duration-200"
                                 placeholder="Minimal 6 karakter"
                                 autocomplete="current-password"
+                                @change="syncFormFromInputs"
                             />
                             <button
                                 type="button"
@@ -191,6 +222,9 @@ const handleLogin = async () => {
                                     <path d="m2 2 20 20" />
                                 </svg>
                             </button>
+                        </div>
+                        <div class="flex justify-end mt-1.5">
+                            <NuxtLink to="/forgot-password" class="text-[11px] font-semibold text-emerald-500 hover:text-emerald-600 transition-colors">Lupa password?</NuxtLink>
                         </div>
                     </div>
 

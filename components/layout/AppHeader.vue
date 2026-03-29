@@ -55,12 +55,16 @@ const todayLabel = computed(() => formatDateFull(new Date()));
         class="sticky top-0 z-40 w-full max-w-app mx-auto glass border-b border-gray-100 dark:border-gray-800/60"
     >
         <div class="page-wrapper">
-            <div class="flex items-center justify-between h-16">
+            <div class="flex items-center justify-between h-16 p-2.5">
                 <!-- ── Left: Greeting + date ────────────────────────── -->
                 <div class="flex items-center gap-3">
                     <!-- Logo -->
-                    <img src="/logo.png" alt="Logo" class="w-8 h-8 object-contain" />
-                    
+                    <img
+                        src="/logo.png"
+                        alt="Logo"
+                        class="w-8 h-8 object-contain"
+                    />
+
                     <div class="flex flex-col justify-center min-w-0">
                         <p
                             class="text-xs font-medium text-gray-400 dark:text-gray-500 truncate"

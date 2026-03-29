@@ -68,13 +68,13 @@ export default defineEventHandler(async (event) => {
 
   const amount = body.amount
 
-  // ── Relaxed Validation: amount vs quantity * unitPrice ────────
+  // ── Validation: amount vs quantity * unitPrice ────────
   // Only check if explicitly provided and not a promo, allowing 1% tolerance for rounding
   if (body.quantity !== undefined && body.unitPrice !== undefined && !body.isPromo) {
     const expected = body.quantity * body.unitPrice
     const diff = Math.abs(amount - expected)
     if (diff > expected * 0.01) { // 1% tolerance
-      console.warn(`[Transaction Warning] Amount ${amount} differs significantly from Qty*Price ${expected}`)
+      throw createError({ statusCode: 400, message: `Nominal (${amount}) tidak sesuai dengan Qty x Harga (${expected})` })
     }
   }
 

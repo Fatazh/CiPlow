@@ -50,12 +50,12 @@ export default defineEventHandler(async (event) => {
   const newUnitPrice = body.unitPrice ?? (existing.unitPrice !== null ? Number(existing.unitPrice) : undefined)
   const newIsPromo = body.isPromo ?? existing.isPromo
 
-  // ── Relaxed Validation ──────────────────────────────────────
+  // ── Validation ──────────────────────────────────────
   if (newQuantity !== undefined && newUnitPrice !== undefined && !newIsPromo) {
     const expected = newQuantity * newUnitPrice
     const diff = Math.abs(newAmount - expected)
     if (diff > expected * 0.01) {
-       console.warn(`[Update Warning] Amount ${newAmount} differs from Qty*Price ${expected}`)
+       throw createError({ statusCode: 400, message: `Nominal (${newAmount}) tidak sesuai dengan Qty x Harga (${expected})` })
     }
   }
 

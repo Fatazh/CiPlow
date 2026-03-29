@@ -9,7 +9,12 @@ export default defineNuxtConfig({
     "@vueuse/nuxt",
     "@vite-pwa/nuxt",
     "@pinia/nuxt",
+    "nuxt-csurf",
   ],
+
+  csurf: {
+    methodsToProtect: ['POST', 'PUT', 'PATCH', 'DELETE'],
+  },
 
   components: [
     {
@@ -121,6 +126,7 @@ export default defineNuxtConfig({
       ],
     },
     workbox: {
+      importScripts: ["/custom-sw.js"],
       // Cache pages (navigations)
       navigateFallback: "/",
       navigateFallbackDenylist: [/^\/api\//],
@@ -168,12 +174,12 @@ export default defineNuxtConfig({
         },
         // API calls — network first with fallback
         {
-          urlPattern: /^\/api\/.*/i,
+          urlPattern: /^\/api\/exchange-rates(?:\?.*)?$/i,
           handler: "NetworkFirst",
           options: {
-            cacheName: "api-cache",
+            cacheName: "public-rates-cache",
             expiration: {
-              maxEntries: 50,
+              maxEntries: 20,
               maxAgeSeconds: 60 * 60, // 1 hour
             },
             cacheableResponse: {
@@ -188,7 +194,7 @@ export default defineNuxtConfig({
       installPrompt: true,
     },
     devOptions: {
-      enabled: true,
+      enabled: false,
       suppressWarnings: true,
       type: "module",
     },
@@ -196,6 +202,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL,
+    cronSecret: process.env.CRON_SECRET,
     public: {
       appName: "CashPlow",
       defaultCurrency: "IDR",

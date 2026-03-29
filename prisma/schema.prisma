@@ -1,12 +1,3 @@
-// ─────────────────────────────────────────────────────────────
-// CashPlow — Budget Tracker · Prisma Schema
-// Compatible with Prisma 6.x (installed: 6.19.x)
-// NOTE: When you migrate to Prisma 7+, move the DATABASE_URL
-// to prisma.config.ts. For now, url = env() is still valid
-// in Prisma 6.x at runtime — the IDE diagnostic is from a
-// Prisma 7 VS Code extension validator (false positive).
-// ─────────────────────────────────────────────────────────────
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,7 +6,199 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─── Enums ───────────────────────────────────────────────────
+model User {
+  id                    String                 @id @default(cuid())
+  name                  String
+  email                 String                 @unique
+  password              String?
+  avatar                String?
+  currency              String                 @default("IDR")
+  locale                String                 @default("id-ID")
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  resetPasswordExpires  DateTime?
+  resetPasswordToken    String?
+  budgets               Budget[]
+  categories            Category[]
+  pushSubscriptions     PushSubscription[]
+  recurringTransactions RecurringTransaction[]
+  sessions              Session[]
+  transactions          Transaction[]
+  wallets               Wallet[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Wallet {
+  id                        String                 @id @default(cuid())
+  name                      String
+  type                      WalletType             @default(CASH)
+  balance                   Decimal                @default(0) @db.Decimal(15, 2)
+  color                     String                 @default("#10b981")
+  icon                      String                 @default("wallet")
+  isDefault                 Boolean                @default(false)
+  description               String?
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @updatedAt
+  userId                    String
+  currency                  String                 @default("IDR")
+  recurringTransactionsFrom RecurringTransaction[] @relation("RecurringWalletFrom")
+  recurringTransactionsTo   RecurringTransaction[] @relation("RecurringWalletTo")
+  transactionsFrom          Transaction[]          @relation("WalletFrom")
+  transactionsTo            Transaction[]          @relation("WalletTo")
+  user                      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("wallets")
+}
+
+model Category {
+  id                    String                 @id @default(cuid())
+  name                  String
+  type                  CategoryType
+  color                 String                 @default("#10b981")
+  icon                  String                 @default("tag")
+  description           String?
+  isDefault             Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  userId                String
+  budgets               Budget[]
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recurringTransactions RecurringTransaction[]
+  transactions          Transaction[]
+
+  @@index([userId])
+  @@index([userId, type])
+  @@map("categories")
+}
+
+model Transaction {
+  id           String          @id @default(cuid())
+  amount       Decimal         @db.Decimal(15, 2)
+  type         TransactionType
+  description  String?
+  notes        String?
+  date         DateTime        @default(now())
+  isPromo      Boolean         @default(false)
+  promoType    PromoType?
+  promoValue   Decimal?        @db.Decimal(15, 2)
+  promoDetails String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  userId       String
+  categoryId   String
+  walletFromId String?
+  walletToId   String?
+  quantity     Int?            @default(1)
+  unitPrice    Decimal?        @db.Decimal(15, 2)
+  exchangeRate Decimal?        @db.Decimal(15, 6)
+  targetAmount Decimal?        @db.Decimal(15, 2)
+  category     Category        @relation(fields: [categoryId], references: [id])
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletFrom   Wallet?         @relation("WalletFrom", fields: [walletFromId], references: [id])
+  walletTo     Wallet?         @relation("WalletTo", fields: [walletToId], references: [id])
+
+  @@index([userId])
+  @@index([userId, date])
+  @@index([userId, type])
+  @@index([categoryId])
+  @@map("transactions")
+}
+
+model Budget {
+  id         String       @id @default(cuid())
+  amount     Decimal      @db.Decimal(15, 2)
+  spent      Decimal      @default(0) @db.Decimal(15, 2)
+  period     BudgetPeriod @default(MONTHLY)
+  month      Int?
+  year       Int
+  isActive   Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  userId     String
+  categoryId String
+  category   Category     @relation(fields: [categoryId], references: [id])
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, month, year])
+  @@index([userId])
+  @@index([userId, year, month])
+  @@map("budgets")
+}
+
+model RecurringTransaction {
+  id           String            @id @default(cuid())
+  amount       Decimal           @db.Decimal(15, 2)
+  type         TransactionType
+  description  String?
+  notes        String?
+  interval     RecurringInterval
+  startDate    DateTime
+  nextDate     DateTime
+  endDate      DateTime?
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  userId       String
+  categoryId   String
+  walletFromId String?
+  walletToId   String?
+  isPromo      Boolean           @default(false)
+  promoDetails String?
+  promoType    PromoType?
+  promoValue   Decimal?          @db.Decimal(15, 2)
+  quantity     Int?              @default(1)
+  unitPrice    Decimal?          @db.Decimal(15, 2)
+  category     Category          @relation(fields: [categoryId], references: [id])
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletFrom   Wallet?           @relation("RecurringWalletFrom", fields: [walletFromId], references: [id])
+  walletTo     Wallet?           @relation("RecurringWalletTo", fields: [walletToId], references: [id])
+
+  @@index([userId])
+  @@index([userId, type])
+  @@index([nextDate])
+  @@map("recurring_transactions")
+}
+
+model ExchangeRate {
+  id             String   @id @default(cuid())
+  baseCurrency   String
+  targetCurrency String
+  rate           Decimal  @db.Decimal(15, 6)
+  date           DateTime @default(now())
+
+  @@unique([baseCurrency, targetCurrency, date])
+  @@index([baseCurrency, targetCurrency])
+  @@map("exchange_rates")
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
 
 enum WalletType {
   CASH
@@ -53,214 +236,4 @@ enum RecurringInterval {
   WEEKLY
   MONTHLY
   YEARLY
-}
-
-// ─── Models ──────────────────────────────────────────────────
-
-model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String?
-  avatar    String?
-  currency  String   @default("IDR")
-  locale    String   @default("id-ID")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  wallets      Wallet[]
-  categories   Category[]
-  transactions Transaction[]
-  recurringTransactions RecurringTransaction[]
-  budgets      Budget[]
-  sessions     Session[]
-
-  @@map("users")
-}
-
-model Session {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([token])
-  @@index([userId])
-  @@map("sessions")
-}
-
-model Wallet {
-  id          String     @id @default(cuid())
-  name        String
-  type        WalletType @default(CASH)
-  currency    String     @default("IDR") // Added for Multi-currency
-  balance     Decimal    @default(0) @db.Decimal(15, 2)
-  color       String     @default("#10b981")
-  icon        String     @default("wallet")
-  isDefault   Boolean    @default(false)
-  description String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  transactionsFrom Transaction[] @relation("WalletFrom")
-  transactionsTo   Transaction[] @relation("WalletTo")
-
-  recurringTransactionsFrom RecurringTransaction[] @relation("RecurringWalletFrom")
-  recurringTransactionsTo   RecurringTransaction[] @relation("RecurringWalletTo")
-
-  @@index([userId])
-  @@map("wallets")
-}
-
-model Category {
-  id          String       @id @default(cuid())
-  name        String
-  type        CategoryType
-  color       String       @default("#10b981")
-  icon        String       @default("tag")
-  description String?
-  isDefault   Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  transactions Transaction[]
-  recurringTransactions RecurringTransaction[]
-  budgets      Budget[]
-
-  @@index([userId])
-  @@index([userId, type])
-  @@map("categories")
-}
-
-model Transaction {
-  id          String          @id @default(cuid())
-  amount      Decimal         @db.Decimal(15, 2)
-  type        TransactionType
-  description String?
-  notes       String?
-  date        DateTime        @default(now())
-
-  // New Detail Fields
-  quantity    Int?            @default(1)
-  unitPrice   Decimal?        @db.Decimal(15, 2)
-
-  // Multi-Currency fields for transfers
-  targetAmount Decimal?       @db.Decimal(15, 2)
-  exchangeRate Decimal?       @db.Decimal(15, 6)
-
-  // Promo Fields
-  isPromo      Boolean    @default(false)
-  promoType    PromoType?
-  promoValue   Decimal?   @db.Decimal(15, 2) // For PERCENTAGE or FIXED
-  promoDetails String?    // For BUY_X_GET_Y details
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  userId     String
-  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
-
-  // Source wallet (for EXPENSE & TRANSFER)
-  walletFromId String?
-  walletFrom   Wallet? @relation("WalletFrom", fields: [walletFromId], references: [id])
-
-  // Destination wallet (for INCOME & TRANSFER)
-  walletToId String?
-  walletTo   Wallet? @relation("WalletTo", fields: [walletToId], references: [id])
-
-  @@index([userId])
-  @@index([userId, date])
-  @@index([userId, type])
-  @@index([categoryId])
-  @@map("transactions")
-}
-
-model Budget {
-  id        String       @id @default(cuid())
-  amount    Decimal      @db.Decimal(15, 2)
-  spent     Decimal      @default(0) @db.Decimal(15, 2)
-  period    BudgetPeriod @default(MONTHLY)
-  month     Int?         // 1–12 (used when period = MONTHLY)
-  year      Int
-  isActive  Boolean      @default(true)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
-
-  @@unique([userId, categoryId, month, year])
-  @@index([userId])
-  @@index([userId, year, month])
-  @@map("budgets")
-}
-
-model RecurringTransaction {
-  id          String          @id @default(cuid())
-  amount      Decimal         @db.Decimal(15, 2)
-  type        TransactionType
-  description String?
-  notes       String?
-  // New Detail Fields
-  quantity    Int?            @default(1)
-  unitPrice   Decimal?        @db.Decimal(15, 2)
-
-  // Promo Fields
-  isPromo      Boolean    @default(false)
-  promoType    PromoType?
-  promoValue   Decimal?   @db.Decimal(15, 2)
-  promoDetails String?
-
-  interval    RecurringInterval
-  startDate   DateTime
-  nextDate    DateTime
-  endDate     DateTime?
-  isActive    Boolean         @default(true)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  userId     String
-  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
-
-  walletFromId String?
-  walletFrom   Wallet? @relation("RecurringWalletFrom", fields: [walletFromId], references: [id])
-
-  walletToId String?
-  walletTo   Wallet? @relation("RecurringWalletTo", fields: [walletToId], references: [id])
-
-  @@index([userId])
-  @@index([userId, type])
-  @@index([nextDate])
-  @@map("recurring_transactions")
-}
-
-model ExchangeRate {
-  id           String   @id @default(cuid())
-  baseCurrency String
-  targetCurrency String
-  rate         Decimal  @db.Decimal(15, 6)
-  date         DateTime @default(now())
-
-  @@unique([baseCurrency, targetCurrency, date])
-  @@index([baseCurrency, targetCurrency])
-  @@map("exchange_rates")
 }

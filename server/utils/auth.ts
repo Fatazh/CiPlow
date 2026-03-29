@@ -40,12 +40,22 @@ export async function createSession(userId: string, event: H3Event) {
   setCookie(event, SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "strict",
     maxAge: SESSION_MAX_AGE,
     path: "/",
   });
 
   return token;
+}
+
+export async function revokeUserSessions(userId: string, event?: H3Event) {
+  await prisma.session.deleteMany({
+    where: { userId },
+  });
+
+  if (event) {
+    deleteCookie(event, SESSION_COOKIE, { path: "/" });
+  }
 }
 
 export async function deleteSession(event: H3Event) {

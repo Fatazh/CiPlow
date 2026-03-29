@@ -9,7 +9,6 @@ declare global {
 
 const connectionString = process.env.DATABASE_URL
 const pool = new Pool({ connectionString })
-// @ts-expect-error: Mismatch between @types/pg and adapter's expected types
 const adapter = new PrismaPg(pool)
 
 /**

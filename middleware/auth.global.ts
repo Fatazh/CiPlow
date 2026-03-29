@@ -14,7 +14,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     }
   }
 
-  const publicPages = ['/login', '/register']
+  const publicPages = ['/login', '/register', '/forgot-password', '/reset-password']
   const isPublicPage = publicPages.includes(to.path)
 
   // Not logged in → redirect to login (unless already on public page)

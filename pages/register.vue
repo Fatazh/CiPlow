@@ -1,6 +1,5 @@
 <script setup lang="ts">
 // pages/register.vue — Register page
-import { ref, reactive, computed } from 'vue';
 
 definePageMeta({ layout: false });
 useHead({ title: "Daftar — CashPlow" });
@@ -29,7 +28,7 @@ const passwordMatch = computed(
     () =>
         form.confirmPassword.length > 0 &&
         form.password === form.confirmPassword &&
-        form.password.length >= 6
+        form.password.length >= 6,
 );
 
 const canSubmit = computed(
@@ -63,10 +62,12 @@ const handleRegister = async () => {
         <div class="w-full max-w-sm">
             <!-- Logo & Title -->
             <div class="text-center mb-8">
-                <div
-                    class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 bg-gradient-to-br from-blue-400 to-emerald-500 shadow-xl shadow-emerald-500/30"
-                >
-                    <img src="/logo.png" alt="Logo" class="w-10 h-10 object-contain drop-shadow-sm" />
+                <div class="flex justify-center mb-8">
+                    <img
+                        src="/logo.png"
+                        alt="Logo"
+                        class="w-20 h-20 object-contain inset-shadow-sm"
+                    />
                 </div>
                 <h1
                     class="text-2xl font-extrabold text-gray-800 dark:text-gray-100"
@@ -290,7 +291,17 @@ const handleRegister = async () => {
                             v-if="passwordMatch"
                             class="text-[11px] text-emerald-500 mt-1 font-semibold flex items-center gap-1"
                         >
-                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <svg
+                                class="w-3 h-3"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="3"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
                             Password cocok
                         </p>
                     </div>

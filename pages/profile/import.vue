@@ -57,7 +57,7 @@ const handleImport = async () => {
 
             // Auto-back after 3 seconds if no row-level errors
             if (!response.errors) {
-                setTimeout(() => router.back(), 3000);
+                setTimeout(() => close(), 3000);
             }
         }
     } catch (err: any) {
