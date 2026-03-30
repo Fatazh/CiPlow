@@ -2,6 +2,12 @@
 // Default layout — wraps every page with Header + main scroll area + BottomNav
 
 const { user } = useAuth()
+const { syncTransactions } = useOfflineSync()
+
+// Initial sync on mount
+onMounted(() => {
+  syncTransactions()
+})
 </script>
 
 <template>

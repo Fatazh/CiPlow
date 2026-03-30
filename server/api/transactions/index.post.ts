@@ -5,7 +5,8 @@ import { z } from 'zod'
 import { PromoType } from '@prisma/client'
 import prisma from '~/server/utils/prisma'
 import { updateBudgetSpent } from '~/server/utils/budget'
-import { recalculateWalletBalance } from '~/server/utils/wallet'
+import { adjustWalletBalance } from '~/server/utils/wallet'
+import { getExchangeRate } from '~/server/utils/exchange'
 
 const transactionSchema = z.object({
   amount: z.number().positive('Nominal harus lebih dari 0'),
@@ -65,13 +66,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Transaksi pengeluaran harus menggunakan kategori bertipe Pengeluaran' })
   }
 
-  // Verify wallets exist and check balance
   const amount = body.amount
 
-  // ── Validation: amount vs quantity * unitPrice ────────────────
+  // ── Validation: amount vs quantity * unitPrice ────────
+  // Only check if explicitly provided and not a promo, allowing 1% tolerance for rounding
   if (body.quantity !== undefined && body.unitPrice !== undefined && !body.isPromo) {
-    if (amount !== body.quantity * body.unitPrice) {
-      throw createError({ statusCode: 400, message: 'Total nominal harus sama dengan kuantitas dikali harga satuan' })
+    const expected = body.quantity * body.unitPrice
+    const diff = Math.abs(amount - expected)
+    if (diff > expected * 0.01) { // 1% tolerance
+      throw createError({ statusCode: 400, message: `Nominal (${amount}) tidak sesuai dengan Qty x Harga (${expected})` })
     }
   }
 
@@ -95,7 +98,7 @@ export default defineEventHandler(async (event) => {
     if (!wTo) throw createError({ statusCode: 404, message: 'Dompet tujuan tidak ditemukan' })
   }
 
-  // Handle Multi-Currency Conversion
+  // Handle Multi-Currency Conversion using utility
   let targetAmount: number | null = null
   let exchangeRate: number | null = null
 
@@ -104,40 +107,20 @@ export default defineEventHandler(async (event) => {
   if (body.type === 'TRANSFER' && wFrom && wTo) {
     // For transfers, targetAmount is the value in the DESTINATION wallet's currency
     if (wFrom.currency !== wTo.currency) {
-      try {
-        const rateRes = await $fetch<any>(`/api/exchange-rates?base=${wFrom.currency}&target=${wTo.currency}`)
-        if (rateRes && rateRes.rate) {
-          exchangeRate = rateRes.rate
-          targetAmount = amount * (exchangeRate ?? 1)
-        }
-      } catch (e) {
-        console.error('Failed to fetch exchange rate for transfer', e)
-        exchangeRate = 1
-        targetAmount = amount
-      }
+      exchangeRate = await getExchangeRate(wFrom.currency, wTo.currency)
+      targetAmount = amount * exchangeRate
     } else {
       targetAmount = amount
       exchangeRate = 1
     }
   } else {
-    // For INCOME and EXPENSE, we want to store the value in the USER'S primary currency
-    // for consistent reporting in the dashboard and analytics.
+    // For INCOME and EXPENSE, store the value in the USER'S primary currency
     const walletCurrency = body.type === 'INCOME' ? wTo?.currency : wFrom?.currency
     
     if (walletCurrency && walletCurrency !== baseCurrency) {
-      try {
-        const rateRes = await $fetch<any>(`/api/exchange-rates?base=${walletCurrency}&target=${baseCurrency}`)
-        if (rateRes && rateRes.rate) {
-          exchangeRate = rateRes.rate
-          targetAmount = amount * (exchangeRate ?? 1)
-        }
-      } catch (e) {
-        console.error('Failed to fetch exchange rate for reporting', e)
-        exchangeRate = 1
-        targetAmount = amount
-      }
+      exchangeRate = await getExchangeRate(walletCurrency, baseCurrency)
+      targetAmount = amount * exchangeRate
     } else {
-      // Wallet is in the same currency as user base
       targetAmount = amount
       exchangeRate = 1
     }
@@ -159,15 +142,12 @@ export default defineEventHandler(async (event) => {
         categoryId: body.categoryId,
         walletFromId: body.walletFromId || null,
         walletToId: body.walletToId || null,
-        // Detail fields
         quantity: body.quantity || 1,
         unitPrice: body.unitPrice || null,
-        // Promo fields
         isPromo: body.isPromo || false,
         promoType: body.promoType || null,
         promoValue: body.promoValue || null,
         promoDetails: body.promoDetails?.trim() || null,
-        // Multi-currency fields
         targetAmount,
         exchangeRate,
       },
@@ -178,16 +158,19 @@ export default defineEventHandler(async (event) => {
       },
     })
 
-    // Update wallet balances and budget
+    // Update wallet balances incrementally
     if (body.type === 'EXPENSE') {
       await updateBudgetSpent(tx, user.id, body.categoryId, txDate, amount)
     }
 
     if (body.walletFromId) {
-      await recalculateWalletBalance(tx, body.walletFromId)
+      // Money LEAVING the wallet
+      await adjustWalletBalance(tx, body.walletFromId, -amount)
     }
     if (body.walletToId) {
-      await recalculateWalletBalance(tx, body.walletToId)
+      // Money ENTERING the wallet
+      const amountToAdd = body.type === 'TRANSFER' ? (targetAmount || amount) : amount
+      await adjustWalletBalance(tx, body.walletToId, amountToAdd)
     }
 
     return transaction
@@ -207,3 +190,4 @@ export default defineEventHandler(async (event) => {
     }
   }
 })
+

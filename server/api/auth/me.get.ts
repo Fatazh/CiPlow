@@ -5,10 +5,12 @@ import { getUserFromSession } from '~/server/utils/auth'
 import prisma from '~/server/utils/prisma'
 
 export default defineEventHandler(async (event) => {
+  try{
   const user = await getUserFromSession(event)
 
   if (!user) {
-    throw createError({ statusCode: 401, message: 'Belum login' })
+    setResponseStatus(event, 401)
+    return { ok: false, message: 'Belum login' }
   }
 
   // Get quick stats
@@ -30,5 +32,10 @@ export default defineEventHandler(async (event) => {
         budgets: budgetCount,
       }
     },
+  }
+  }catch(err){
+    console.error('[me.get] Unhandled error:', err)
+        setResponseStatus(event, 500)
+        return { ok: false, message: 'Server error' }
   }
 })

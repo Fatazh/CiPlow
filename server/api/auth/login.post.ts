@@ -4,6 +4,7 @@
 import { z } from 'zod'
 import prisma from '~/server/utils/prisma'
 import { verifyPassword, createSession } from '~/server/utils/auth'
+import { assertRateLimit } from '~/server/utils/rate-limit'
 
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email('Format email tidak valid'),
@@ -11,6 +12,13 @@ const loginSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  assertRateLimit(event, {
+    key: 'auth-login',
+    max: 10,
+    windowMs: 15 * 60 * 1000,
+    message: 'Terlalu banyak percobaan login. Coba lagi dalam beberapa menit.',
+  })
+
   const result = await readValidatedBody(event, (body) => loginSchema.safeParse(body))
   
   if (!result.success) {

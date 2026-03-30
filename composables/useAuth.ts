@@ -22,6 +22,19 @@ interface User {
 export function useAuth() {
   const router = useRouter()
 
+  const clearPrivateClientData = async () => {
+    if (!import.meta.client) return
+
+    if ('caches' in window) {
+      await caches.delete('api-cache').catch(() => {})
+    }
+
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.ready.catch(() => null)
+      registration?.active?.postMessage({ type: 'CLEAR_PRIVATE_CACHE' })
+    }
+  }
+
   // Use Nuxt's useState to prevent cross-request state pollution during SSR
   const user = useState<User | null>('auth-user', () => null)
   const loading = useState<boolean>('auth-loading', () => true)
@@ -91,8 +104,22 @@ export function useAuth() {
 
   // ── Logout ─────────────────────────────────────────────────
   const logout = async () => {
+    // 1. Call server to delete session cookie
     await $fetch('/api/auth/logout', { method: 'POST' })
+    await clearPrivateClientData()
+    
+    // 2. Clear local device PIN from store and localStorage for security
+    if (import.meta.client) {
+      const userStore = useUserStore()
+      userStore.setPin('') // Reset PIN state
+      userStore.isLocked = false
+      localStorage.removeItem('ciplow_app_pin')
+    }
+
+    // 3. Reset local auth state
     user.value = null
+    
+    // 4. Redirect to login
     await router.push('/login')
   }
 

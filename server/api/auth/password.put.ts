@@ -3,7 +3,7 @@
 
 import { z } from 'zod'
 import prisma from '~/server/utils/prisma'
-import { verifyPassword, hashPassword } from '~/server/utils/auth'
+import { verifyPassword, hashPassword, revokeUserSessions } from '~/server/utils/auth'
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, 'Password saat ini diperlukan'),
@@ -49,5 +49,7 @@ export default defineEventHandler(async (event) => {
     data: { password: newHashedPassword },
   })
 
-  return { ok: true, message: 'Password berhasil diperbarui' }
+  await revokeUserSessions(user.id, event)
+
+  return { ok: true, message: 'Password berhasil diperbarui. Silakan login kembali.' }
 })

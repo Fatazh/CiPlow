@@ -24,6 +24,13 @@ const passwordMismatch = computed(
         form.password !== form.confirmPassword,
 );
 
+const passwordMatch = computed(
+    () =>
+        form.confirmPassword.length > 0 &&
+        form.password === form.confirmPassword &&
+        form.password.length >= 6,
+);
+
 const canSubmit = computed(
     () =>
         form.name.trim().length > 0 &&
@@ -55,10 +62,12 @@ const handleRegister = async () => {
         <div class="w-full max-w-sm">
             <!-- Logo & Title -->
             <div class="text-center mb-8">
-                <div
-                    class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 bg-gradient-to-br from-blue-400 to-emerald-500 shadow-xl shadow-emerald-500/30"
-                >
-                    <img src="/logo.png" alt="Logo" class="w-10 h-10 object-contain drop-shadow-sm" />
+                <div class="flex justify-center mb-8">
+                    <img
+                        src="/logo.png"
+                        alt="Logo"
+                        class="w-20 h-20 object-contain inset-shadow-sm"
+                    />
                 </div>
                 <h1
                     class="text-2xl font-extrabold text-gray-800 dark:text-gray-100"
@@ -265,7 +274,7 @@ const handleRegister = async () => {
                                 class="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 dark:bg-surface-800 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none transition-all duration-200"
                                 :class="
                                     passwordMismatch
-                                        ? 'border-2 border-rose-400 focus:ring-2 focus:ring-rose-400/50'
+                                        ? 'border-2 border-rose-400 hover:border-rose-500 focus:ring-2 focus:ring-rose-400/50'
                                         : 'border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400'
                                 "
                                 placeholder="Ketik ulang password"
@@ -277,6 +286,23 @@ const handleRegister = async () => {
                             class="text-[11px] text-rose-500 mt-1 font-semibold"
                         >
                             ⚠️ Password tidak sama
+                        </p>
+                        <p
+                            v-if="passwordMatch"
+                            class="text-[11px] text-emerald-500 mt-1 font-semibold flex items-center gap-1"
+                        >
+                            <svg
+                                class="w-3 h-3"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="3"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Password cocok
                         </p>
                     </div>
 
