@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   ])
 
   const exportData = {
-    version: '1.1.0',
+    version: '1.2.1',
     exportDate: new Date().toISOString(),
     user: {
       name: user.name,
