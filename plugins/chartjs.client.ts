@@ -1,5 +1,8 @@
 import {
   Chart as ChartJS,
+  BarController,
+  LineController,
+  DoughnutController,
   ArcElement,
   Tooltip,
   Legend,
@@ -15,6 +18,11 @@ import {
 
 // Register all Chart.js components used across the app
 ChartJS.register(
+  // Controllers
+  BarController,
+  LineController,
+  DoughnutController,
+
   // Geometry
   ArcElement, // Doughnut / Pie
   BarElement, // Bar charts

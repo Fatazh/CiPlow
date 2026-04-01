@@ -91,7 +91,7 @@ const close = () => {
                                     <p
                                         class="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1"
                                     >
-                                        Versi 1.2.0
+                                        Versi 1.2.1
                                     </p>
                                 </div>
 
