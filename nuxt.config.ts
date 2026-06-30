@@ -7,7 +7,6 @@ export default defineNuxtConfig({
     "@nuxtjs/tailwindcss",
     "@nuxtjs/color-mode",
     "@vueuse/nuxt",
-    "@vite-pwa/nuxt",
     "@pinia/nuxt",
     "nuxt-csurf",
   ],
@@ -83,122 +82,7 @@ export default defineNuxtConfig({
     },
   },
 
-  // ── PWA Configuration ─────────────────────────────────────────
-  pwa: {
-    registerType: "autoUpdate",
-    manifest: {
-      name: "CashPlow — Budget Tracker",
-      short_name: "CashPlow",
-      description: "Aplikasi pencatatan keuangan pribadi",
-      theme_color: "#10b981",
-      background_color: "#f0fdf4",
-      display: "standalone",
-      orientation: "portrait",
-      scope: "/",
-      start_url: "/",
-      lang: "id",
-      categories: ["finance", "utilities"],
-      icons: [
-        {
-          src: "/icon-192x192.png",
-          sizes: "192x192",
-          type: "image/png",
-          purpose: "any",
-        },
-        {
-          src: "/icon-512x512.png",
-          sizes: "512x512",
-          type: "image/png",
-          purpose: "any",
-        },
-        {
-          src: "/icon-512x512.png",
-          sizes: "512x512",
-          type: "image/png",
-          purpose: "maskable",
-        },
-        {
-          src: "/icon-monochrome.png",
-          sizes: "512x512",
-          type: "image/png",
-          purpose: "monochrome",
-        },
-      ],
-    },
-    workbox: {
-      importScripts: ["/custom-sw.js"],
-      // Cache pages (navigations)
-      navigateFallback: "/",
-      navigateFallbackDenylist: [/^\/api\//],
 
-      // Runtime caching strategies
-      runtimeCaching: [
-        // Google Fonts — cache first (long-lived)
-        {
-          urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
-          handler: "CacheFirst",
-          options: {
-            cacheName: "google-fonts-cache",
-            expiration: {
-              maxEntries: 20,
-              maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
-            },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
-        },
-        // Static assets — stale while revalidate
-        {
-          urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
-          handler: "StaleWhileRevalidate",
-          options: {
-            cacheName: "static-images-cache",
-            expiration: {
-              maxEntries: 50,
-              maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-            },
-          },
-        },
-        // JS/CSS bundles — stale while revalidate
-        {
-          urlPattern: /\.(?:js|css)$/i,
-          handler: "StaleWhileRevalidate",
-          options: {
-            cacheName: "static-resources-cache",
-            expiration: {
-              maxEntries: 30,
-              maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-            },
-          },
-        },
-        // API calls — network first with fallback
-        {
-          urlPattern: /^\/api\/exchange-rates(?:\?.*)?$/i,
-          handler: "NetworkFirst",
-          options: {
-            cacheName: "public-rates-cache",
-            expiration: {
-              maxEntries: 20,
-              maxAgeSeconds: 60 * 60, // 1 hour
-            },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-            networkTimeoutSeconds: 5,
-          },
-        },
-      ],
-    },
-    client: {
-      installPrompt: true,
-    },
-    devOptions: {
-      enabled: false,
-      suppressWarnings: true,
-      type: "module",
-    },
-  },
 
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL,
