@@ -37,7 +37,6 @@ Dokumen ini berisi panduan dan instruksi teknis untuk pengembangan proyek **Cash
 ## ⚠️ Catatan Penting
 - Aplikasi menggunakan `nuxt-csurf` untuk perlindungan CSRF.
 - Pastikan database PostgreSQL sudah dikonfigurasi di `DATABASE_URL` sebelum menjalankan aplikasi.
-- Terdapat sistem penguncian aplikasi (PIN) yang dikelola di `stores/user.ts` dan `middleware/lock.global.ts`.
 
 ---
 *Dokumen ini dihasilkan secara otomatis untuk membantu navigasi dan pengembangan proyek.*

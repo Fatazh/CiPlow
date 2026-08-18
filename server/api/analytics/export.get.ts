@@ -4,6 +4,7 @@
 import ExcelJS from 'exceljs'
 import prisma from '~/server/utils/prisma'
 import { requireAuth } from '~/server/utils/auth'
+import { generateFinancialPDFReport } from '~/server/utils/pdfExport'
 
 export default defineEventHandler(async (event) => {
   const user = await requireAuth(event)
@@ -92,7 +93,7 @@ export default defineEventHandler(async (event) => {
     return exportData
   }
 
-  // Handle XLSX Excel format
+  // Fetch data for XLSX and PDF formats
   const [transactions, userWallets, userCategories] = await Promise.all([
     prisma.transaction.findMany({
       where: whereClause,
@@ -106,6 +107,28 @@ export default defineEventHandler(async (event) => {
     prisma.wallet.findMany({ where: { userId: user.id } }),
     prisma.category.findMany({ where: { userId: user.id } }),
   ])
+
+  // Handle PDF format
+  if (format === 'pdf') {
+    const pdfBuffer = await generateFinancialPDFReport({
+      user: {
+        name: user.name,
+        email: user.email,
+        currency: user.currency,
+      },
+      periodLabel,
+      transactions,
+      categories: userCategories,
+      wallets: userWallets,
+    })
+
+    const filename = `CashPlow_Laporan_${periodLabel}_${new Date().toISOString().slice(0, 10)}.pdf`
+    setHeader(event, 'Content-Type', 'application/pdf')
+    setHeader(event, 'Content-Disposition', `attachment; filename="${filename}"`)
+    setHeader(event, 'Content-Length', pdfBuffer.length)
+    setHeader(event, 'Cache-Control', 'no-cache')
+    return pdfBuffer
+  }
 
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'CashPlow Budget Tracker'

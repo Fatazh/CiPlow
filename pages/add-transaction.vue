@@ -136,13 +136,29 @@ const onPromoValueInput = (e: Event) => {
     promoValueDisplay.value = num > 0 ? num.toLocaleString("id-ID") : "";
 };
 
-// Unit price display logic
+// Unit price display & Math Calculator logic
 const unitPriceDisplay = ref("");
+const unitPriceMath = computed(() => evaluateMathExpression(unitPriceDisplay.value));
+
 const onUnitPriceInput = (e: Event) => {
-    const raw = (e.target as HTMLInputElement).value.replace(/\D/g, "");
-    const num = parseInt(raw) || 0;
-    form.unitPrice = num;
-    unitPriceDisplay.value = num > 0 ? num.toLocaleString("id-ID") : "";
+    const val = (e.target as HTMLInputElement).value;
+    const sanitized = val.replace(/[^0-9+\-*/().\s]/g, "");
+    unitPriceDisplay.value = sanitized;
+    const math = evaluateMathExpression(sanitized);
+    if (math.isValid && math.result !== null) {
+        form.unitPrice = math.result;
+    }
+};
+
+const onUnitPriceBlur = () => {
+    const math = evaluateMathExpression(unitPriceDisplay.value);
+    if (math.isValid && math.result !== null && math.result > 0) {
+        form.unitPrice = math.result;
+        unitPriceDisplay.value = math.result.toLocaleString("id-ID");
+    } else if (!unitPriceDisplay.value || form.unitPrice === 0) {
+        form.unitPrice = 0;
+        unitPriceDisplay.value = "";
+    }
 };
 
 const saving = ref(false);
@@ -166,14 +182,29 @@ watch(txType, () => {
     form.promoDetails = "";
 });
 
-// ── Amount input ─────────────────────────────────────────────
+// ── Amount input & Math Calculator logic ─────────────────────
 const amountDisplay = ref("");
+const amountMath = computed(() => evaluateMathExpression(amountDisplay.value));
 
 const onAmountInput = (e: Event) => {
-    const raw = (e.target as HTMLInputElement).value.replace(/\D/g, "");
-    const num = parseInt(raw) || 0;
-    form.amount = num;
-    amountDisplay.value = num > 0 ? num.toLocaleString("id-ID") : "";
+    const val = (e.target as HTMLInputElement).value;
+    const sanitized = val.replace(/[^0-9+\-*/().\s]/g, "");
+    amountDisplay.value = sanitized;
+    const math = evaluateMathExpression(sanitized);
+    if (math.isValid && math.result !== null) {
+        form.amount = math.result;
+    }
+};
+
+const onAmountBlur = () => {
+    const math = evaluateMathExpression(amountDisplay.value);
+    if (math.isValid && math.result !== null && math.result > 0) {
+        form.amount = math.result;
+        amountDisplay.value = math.result.toLocaleString("id-ID");
+    } else if (!amountDisplay.value || form.amount === 0) {
+        form.amount = 0;
+        amountDisplay.value = "";
+    }
 };
 
 // ── Category picker (bottom sheet) ───────────────────────────
@@ -258,7 +289,7 @@ const submit = async () => {
     try {
         if (isOnline.value) {
             // Online: Always create the immediate transaction
-            await $fetch("/api/transactions", {
+            const res = await $fetch<{ ok: boolean; data: any; budgetAlert?: any }>("/api/transactions", {
                 method: "POST",
                 body: payload,
             });
@@ -288,20 +319,27 @@ const submit = async () => {
                     body: recurringPayload,
                 });
             }
-            toast.message = form.isRecurring ? "Transaksi & Jadwal Berulang berhasil ditambahkan! 🎉" : "Transaksi berhasil ditambahkan! 🎉";
+
+            if (res?.budgetAlert?.triggered) {
+                toast.message = `${res.budgetAlert.message} 🎯`;
+                toast.type = res.budgetAlert.level === 'danger' ? 'error' : 'success';
+            } else {
+                toast.message = form.isRecurring ? "Transaksi & Jadwal Berulang berhasil ditambahkan! 🎉" : "Transaksi berhasil ditambahkan! 🎉";
+                toast.type = "success";
+            }
         } else {
             // Offline: Save locally
             saveOffline(payload);
             toast.message = "Kamu offline. Transaksi disimpan di HP-mu & akan disinkronkan nanti! 💾";
+            toast.type = "success";
         }
 
-        toast.type = "success";
         toast.show = true;
 
         // Navigate back after a brief delay
         setTimeout(() => {
             router.push("/");
-        }, 800);
+        }, 1200);
     } catch (err: any) {
         toast.message = err?.data?.message ?? "Gagal menambahkan transaksi";
         toast.type = "error";
@@ -322,33 +360,69 @@ const typeColor = computed(() => {
     }
 });
 
+// ── AI Receipt Scanner State ─────────────────────────────────
+const showScannerModal = ref(false);
+
+const handleReceiptScanned = (scanned: any) => {
+    txType.value = "EXPENSE";
+    form.description = scanned.merchant || "Belanja";
+    form.quantity = 1;
+    form.unitPrice = scanned.totalAmount || 0;
+    form.amount = scanned.totalAmount || 0;
+    amountDisplay.value = scanned.totalAmount ? scanned.totalAmount.toLocaleString("id-ID") : "";
+    unitPriceDisplay.value = scanned.totalAmount ? scanned.totalAmount.toLocaleString("id-ID") : "";
+    if (scanned.date) form.date = scanned.date;
+    if (scanned.matchedCategoryId) form.categoryId = scanned.matchedCategoryId;
+
+    if (scanned.items && scanned.items.length > 0) {
+        const itemLines = scanned.items.map((it: any) => `• ${it.quantity}x ${it.name} (${formatIDR(it.unitPrice)})`).join("\n");
+        form.notes = itemLines;
+    }
+
+    toast.message = `✨ Struk dari "${scanned.merchant}" berhasil dibaca oleh Gemini AI!`;
+    toast.type = "success";
+    toast.show = true;
+};
 </script>
 
 <template>
     <div class="space-y-4 animate-fade-in">
-        <!-- ── Header with back button ───────────────────────────── -->
-        <div class="flex items-center gap-3">
-            <button class="btn-icon w-9 h-9" @click="router.back()">
-                <svg
-                    class="w-5 h-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="m15 18-6-6 6-6" />
-                </svg>
-            </button>
-            <div>
-                <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100">
-                    Tambah Transaksi
-                </h2>
-                <p class="text-xs text-gray-400 dark:text-gray-500">
-                    Catat pemasukan atau pengeluaran
-                </p>
+        <!-- ── Header with back button & AI Scan Struk ─────────── -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <button class="btn-icon w-9 h-9" @click="router.back()">
+                    <svg
+                        class="w-5 h-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="m15 18-6-6 6-6" />
+                    </svg>
+                </button>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100">
+                        Tambah Transaksi
+                    </h2>
+                    <p class="text-xs text-gray-400 dark:text-gray-500">
+                        Catat pemasukan atau pengeluaran
+                    </p>
+                </div>
             </div>
+
+            <!-- AI Scan Button -->
+            <button
+                type="button"
+                @click="showScannerModal = true"
+                class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-500/20 hover:opacity-95 transition-all active:scale-95 flex items-center gap-1.5"
+                title="Scan Struk dengan AI"
+            >
+                <span>📷</span>
+                <span>Scan Struk</span>
+            </button>
         </div>
 
         <!-- ── Transaction Type Selector ─────────────────────────── -->
@@ -479,11 +553,17 @@ const typeColor = computed(() => {
                             <input
                                 :value="unitPriceDisplay"
                                 type="text"
-                                inputmode="numeric"
                                 class="input pl-10 pr-3 text-right font-bold"
-                                placeholder="0"
+                                placeholder="0 / misal: 25000*3"
                                 @input="onUnitPriceInput"
+                                @blur="onUnitPriceBlur"
+                                @keydown.enter.prevent="onUnitPriceBlur"
                             />
+                        </div>
+                        <div v-if="unitPriceMath.isExpression && unitPriceMath.isValid" class="mt-1.5 flex justify-end">
+                            <span class="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 shadow-sm animate-fade-in">
+                                🧮 = {{ formatIDR(unitPriceMath.result || 0) }}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -865,11 +945,17 @@ const typeColor = computed(() => {
                         <input
                             :value="amountDisplay"
                             type="text"
-                            inputmode="numeric"
                             class="text-3xl font-black text-emerald-500 bg-transparent border-none outline-none w-full max-w-[240px] text-center"
-                            placeholder="0"
+                            placeholder="0 / misal: 50000+15000"
                             @input="onAmountInput"
+                            @blur="onAmountBlur"
+                            @keydown.enter.prevent="onAmountBlur"
                         />
+                    </div>
+                    <div v-if="amountMath.isExpression && amountMath.isValid" class="mt-2 flex justify-center">
+                        <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-3 py-1 rounded-full inline-flex items-center gap-1.5 shadow-sm animate-fade-in">
+                            🧮 = {{ formatIDR(amountMath.result || 0) }}
+                        </span>
                     </div>
                 </div>
             </template>
@@ -1041,11 +1127,17 @@ const typeColor = computed(() => {
                         <input
                             :value="amountDisplay"
                             type="text"
-                            inputmode="numeric"
                             class="text-3xl font-black text-blue-500 bg-transparent border-none outline-none w-full max-w-[240px] text-center"
-                            placeholder="0"
+                            placeholder="0 / misal: 100000/2"
                             @input="onAmountInput"
+                            @blur="onAmountBlur"
+                            @keydown.enter.prevent="onAmountBlur"
                         />
+                    </div>
+                    <div v-if="amountMath.isExpression && amountMath.isValid" class="mt-2 flex justify-center">
+                        <span class="text-xs font-black text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/60 px-3 py-1 rounded-full inline-flex items-center gap-1.5 shadow-sm animate-fade-in">
+                            🧮 = {{ formatIDR(amountMath.result || 0) }}
+                        </span>
                     </div>
                 </div>
                 <!-- Warning Insufficient Balance -->
@@ -1286,6 +1378,13 @@ const typeColor = computed(() => {
                 </button>
             </div>
         </BottomSheet>
+
+        <!-- ── AI Receipt Scanner Modal ───────────────────────── -->
+        <ReceiptScannerModal
+            :show="showScannerModal"
+            @close="showScannerModal = false"
+            @scanned="handleReceiptScanned"
+        />
 
         <!-- ── Toast ───────────────────────────────────────────────── -->
         <Toast

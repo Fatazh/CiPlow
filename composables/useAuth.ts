@@ -108,15 +108,7 @@ export function useAuth() {
     await $fetch('/api/auth/logout', { method: 'POST' })
     await clearPrivateClientData()
     
-    // 2. Clear local device PIN from store and localStorage for security
-    if (import.meta.client) {
-      const userStore = useUserStore()
-      userStore.setPin('') // Reset PIN state
-      userStore.isLocked = false
-      localStorage.removeItem('ciplow_app_pin')
-    }
-
-    // 3. Reset local auth state
+    // 2. Reset local auth state
     user.value = null
     
     // 4. Redirect to login

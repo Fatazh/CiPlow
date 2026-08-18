@@ -8,19 +8,13 @@ export const useUserStore = defineStore('user', () => {
   const locale = ref('id-ID')
   const currency = computed(() => user.value?.currency || _currency.value)
 
-  // ── Lock State ──────────────────────────────────────────────
-  const isLocked = ref(false)
-  const appPin = ref<string | null>(null)
-  const lastActive = ref(Date.now())
-  const lockTimeout = 3 * 60 * 1000 // 3 minutes in ms
-
   // Initial load
   if (import.meta.client) {
     const savedCurrency = localStorage.getItem('CashPlow-currency')
     if (savedCurrency) _currency.value = savedCurrency
 
-    const savedPin = localStorage.getItem('ciplow_app_pin')
-    if (savedPin) appPin.value = savedPin
+    // Clean up any legacy PIN data
+    localStorage.removeItem('ciplow_app_pin')
   }
 
   const setCurrency = async (newCurrency: string) => {
@@ -38,46 +32,9 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // ── Lock Logic ──────────────────────────────────────────────
-  const setPin = (pin: string) => {
-    appPin.value = pin
-    if (import.meta.client) {
-      localStorage.setItem('ciplow_app_pin', pin)
-    }
-  }
-
-  const checkAutoLock = () => {
-    if (!appPin.value) return
-    const now = Date.now()
-    if (now - lastActive.value > lockTimeout) {
-      isLocked.value = true
-    }
-  }
-
-  const unlock = (pin: string) => {
-    if (pin === appPin.value) {
-      isLocked.value = false
-      lastActive.value = Date.now()
-      return true
-    }
-    return false
-  }
-
-  const updateActivity = () => {
-    lastActive.value = Date.now()
-  }
-
   return {
     currency,
     locale,
-    setCurrency,
-    // Lock exports
-    isLocked,
-    hasPin: computed(() => !!appPin.value),
-    setPin,
-    unlock,
-    checkAutoLock,
-    updateActivity
+    setCurrency
   }
 })
-

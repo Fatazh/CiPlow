@@ -105,6 +105,17 @@ export default defineEventHandler(async (event) => {
       await adjustWalletBalance(tx, existing.walletToId, -amountToReverse)
     }
 
+    // Check if walletFrom has sufficient balance after reversal
+    if (newWalletFromId && (newType === 'EXPENSE' || newType === 'TRANSFER')) {
+      const freshWallet = await tx.wallet.findUnique({ where: { id: newWalletFromId } })
+      if (freshWallet && Number(freshWallet.balance) < newAmount) {
+        throw createError({
+          statusCode: 400,
+          message: `Saldo tidak mencukupi. Saldo tersedia setelah penyesuaian: ${Number(freshWallet.balance)}`
+        })
+      }
+    }
+
     // 2. UPDATE
     const updated = await tx.transaction.update({
       where: { id },
@@ -130,8 +141,9 @@ export default defineEventHandler(async (event) => {
     })
 
     // 3. APPLY NEW
+    let budgetAlert = null
     if (newType === 'EXPENSE') {
-      await updateBudgetSpent(tx, user.id, updated.categoryId, updated.date, newAmount)
+      budgetAlert = await updateBudgetSpent(tx, user.id, updated.categoryId, updated.date, newAmount)
     }
     if (newWalletFromId && newType !== 'INCOME') {
       await adjustWalletBalance(tx, newWalletFromId, -newAmount)
@@ -141,21 +153,22 @@ export default defineEventHandler(async (event) => {
       await adjustWalletBalance(tx, newWalletToId, amountToAdd)
     }
 
-    return updated
+    return { updated, budgetAlert }
   })
 
   return {
     ok: true,
     data: {
-      id: txResult.id,
-      amount: Number(txResult.amount),
-      type: txResult.type,
-      description: txResult.description,
-      date: txResult.date.toISOString(),
-      category: txResult.category.name,
-      walletFrom: txResult.walletFrom?.name ?? null,
-      walletTo: txResult.walletTo?.name ?? null,
-    }
+      id: txResult.updated.id,
+      amount: Number(txResult.updated.amount),
+      type: txResult.updated.type,
+      description: txResult.updated.description,
+      date: txResult.updated.date.toISOString(),
+      category: txResult.updated.category.name,
+      walletFrom: txResult.updated.walletFrom?.name ?? null,
+      walletTo: txResult.updated.walletTo?.name ?? null,
+    },
+    budgetAlert: txResult.budgetAlert,
   }
 })
 

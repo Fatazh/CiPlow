@@ -3,6 +3,7 @@ import { z } from 'zod'
 import crypto from 'crypto'
 import prisma from '~/server/utils/prisma'
 import { assertRateLimit } from '~/server/utils/rate-limit'
+import { sendResetPasswordEmail } from '~/server/utils/email'
 
 const forgotPasswordSchema = z.object({
   email: z.string().trim().toLowerCase().email('Format email tidak valid'),
@@ -46,16 +47,25 @@ export default defineEventHandler(async (event) => {
     }
   })
 
-  // 4. Send email (Simulasi)
-  const resetUrl = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`
-  
-  console.log('--- RESET PASSWORD EMAIL (SIMULASI) ---')
-  console.log(`To: ${email}`)
-  console.log(`Link: ${resetUrl}`)
-  console.log('----------------------------------------')
+  // 4. Send real email via Nodemailer
+  // Detect origin from request headers or environment
+  const requestHost = getHeader(event, 'host')
+  const protocol = getHeader(event, 'x-forwarded-proto') || 'http'
+  const appBaseUrl = process.env.APP_URL || (requestHost ? `${protocol}://${requestHost}` : 'http://localhost:3000')
+  const resetUrl = `${appBaseUrl}/reset-password?token=${token}`
+
+  try {
+    await sendResetPasswordEmail({
+      to: email,
+      userName: user.name,
+      resetUrl,
+    })
+  } catch (err) {
+    console.error('[Email Error] Gagal mengirim email reset password:', err)
+  }
 
   return { 
     ok: true, 
-    message: 'Jika email terdaftar, instruksi reset akan dikirim.',
+    message: 'Jika email terdaftar, instruksi reset akan dikirim ke inbox/spam email Anda.',
   }
 })
