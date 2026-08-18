@@ -50,18 +50,7 @@ watch(
         overflow-y-auto
       "
     >
-      <!-- Page transition -->
-      <Transition
-        mode="out-in"
-        enter-active-class="transition-all duration-250 ease-out"
-        enter-from-class="opacity-0 translate-y-3"
-        enter-to-class="opacity-100 translate-y-0"
-        leave-active-class="transition-all duration-150 ease-in"
-        leave-from-class="opacity-100 translate-y-0"
-        leave-to-class="opacity-0 -translate-y-2"
-      >
-        <slot />
-      </Transition>
+      <slot />
     </main>
 
     <!-- ── Bottom Navigation ───────────────────────────────── -->
