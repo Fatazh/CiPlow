@@ -1,4 +1,4 @@
-import { createError, getRequestIP, setResponseHeader, type H3Event } from "h3";
+import { createError, getRequestIP, setHeader, type H3Event } from "h3";
 
 type RateLimitOptions = {
   key: string;
@@ -52,10 +52,10 @@ export function assertRateLimit(event: H3Event, options: RateLimitOptions) {
   }
 
   if (existing.count >= options.max) {
-    setResponseHeader(
+    setHeader(
       event,
       "Retry-After",
-      Math.max(1, Math.ceil((existing.resetAt - now) / 1000)).toString(),
+      Math.max(1, Math.ceil((existing.resetAt - now) / 1000)),
     );
 
     throw createError({
