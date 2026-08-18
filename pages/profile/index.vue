@@ -1,7 +1,4 @@
 <script setup lang="ts">
-definePageMeta({
-    ssr: false,
-});
 useHead({ title: "Profil — CashPlow" });
 
 // ── Color mode (dark / light / system) ────────────────────────
