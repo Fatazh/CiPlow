@@ -142,24 +142,55 @@ const onPromoValueInput = (e: Event) => {
 };
 
 const unitPriceDisplay = ref("");
+const unitPriceMath = computed(() => evaluateMathExpression(unitPriceDisplay.value));
+
 const onUnitPriceInput = (e: Event) => {
-    const raw = (e.target as HTMLInputElement).value.replace(/\D/g, "");
-    const num = parseInt(raw) || 0;
-    form.unitPrice = num;
-    unitPriceDisplay.value = num > 0 ? num.toLocaleString("id-ID") : "";
+    const val = (e.target as HTMLInputElement).value;
+    const sanitized = val.replace(/[^0-9+\-*/().\s]/g, "");
+    unitPriceDisplay.value = sanitized;
+    const math = evaluateMathExpression(sanitized);
+    if (math.isValid && math.result !== null) {
+        form.unitPrice = math.result;
+    }
+};
+
+const onUnitPriceBlur = () => {
+    const math = evaluateMathExpression(unitPriceDisplay.value);
+    if (math.isValid && math.result !== null && math.result > 0) {
+        form.unitPrice = math.result;
+        unitPriceDisplay.value = math.result.toLocaleString("id-ID");
+    } else if (!unitPriceDisplay.value || form.unitPrice === 0) {
+        form.unitPrice = 0;
+        unitPriceDisplay.value = "";
+    }
 };
 
 const saving = ref(false);
 const formInitialized = ref(false);
 
-// ── Amount input (declared early for watch) ──────────────────
+// ── Amount input & Math Calculator logic ─────────────────────
 const amountDisplay = ref("");
+const amountMath = computed(() => evaluateMathExpression(amountDisplay.value));
 
 const onAmountInput = (e: Event) => {
-    const raw = (e.target as HTMLInputElement).value.replace(/\D/g, "");
-    const num = parseInt(raw) || 0;
-    form.amount = num;
-    amountDisplay.value = num > 0 ? num.toLocaleString("id-ID") : "";
+    const val = (e.target as HTMLInputElement).value;
+    const sanitized = val.replace(/[^0-9+\-*/().\s]/g, "");
+    amountDisplay.value = sanitized;
+    const math = evaluateMathExpression(sanitized);
+    if (math.isValid && math.result !== null) {
+        form.amount = math.result;
+    }
+};
+
+const onAmountBlur = () => {
+    const math = evaluateMathExpression(amountDisplay.value);
+    if (math.isValid && math.result !== null && math.result > 0) {
+        form.amount = math.result;
+        amountDisplay.value = math.result.toLocaleString("id-ID");
+    } else if (!amountDisplay.value || form.amount === 0) {
+        form.amount = 0;
+        amountDisplay.value = "";
+    }
 };
 
 // ── Initialize form from fetched data ────────────────────────
@@ -572,11 +603,17 @@ const submit = async () => {
                                 <input
                                     :value="unitPriceDisplay"
                                     type="text"
-                                    inputmode="numeric"
                                     class="input pl-10 pr-3 text-right font-bold"
-                                    placeholder="0"
+                                    placeholder="0 / misal: 25000*3"
                                     @input="onUnitPriceInput"
+                                    @blur="onUnitPriceBlur"
+                                    @keydown.enter.prevent="onUnitPriceBlur"
                                 />
+                            </div>
+                            <div v-if="unitPriceMath.isExpression && unitPriceMath.isValid" class="mt-1.5 flex justify-end">
+                                <span class="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 shadow-sm animate-fade-in">
+                                    🧮 = {{ formatIDR(unitPriceMath.result || 0) }}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -921,11 +958,17 @@ const submit = async () => {
                             <input
                                 :value="amountDisplay"
                                 type="text"
-                                inputmode="numeric"
                                 class="text-3xl font-black text-emerald-500 bg-transparent border-none outline-none w-full max-w-[240px] text-center"
-                                placeholder="0"
+                                placeholder="0 / misal: 50000+15000"
                                 @input="onAmountInput"
+                                @blur="onAmountBlur"
+                                @keydown.enter.prevent="onAmountBlur"
                             />
+                        </div>
+                        <div v-if="amountMath.isExpression && amountMath.isValid" class="mt-2 flex justify-center">
+                            <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-3 py-1 rounded-full inline-flex items-center gap-1.5 shadow-sm animate-fade-in">
+                                🧮 = {{ formatIDR(amountMath.result || 0) }}
+                            </span>
                         </div>
                     </div>
                 </template>
@@ -1102,11 +1145,17 @@ const submit = async () => {
                             <input
                                 :value="amountDisplay"
                                 type="text"
-                                inputmode="numeric"
                                 class="text-3xl font-black text-blue-500 bg-transparent border-none outline-none w-full max-w-[240px] text-center"
-                                placeholder="0"
+                                placeholder="0 / misal: 100000/2"
                                 @input="onAmountInput"
+                                @blur="onAmountBlur"
+                                @keydown.enter.prevent="onAmountBlur"
                             />
+                        </div>
+                        <div v-if="amountMath.isExpression && amountMath.isValid" class="mt-2 flex justify-center">
+                            <span class="text-xs font-black text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/60 px-3 py-1 rounded-full inline-flex items-center gap-1.5 shadow-sm animate-fade-in">
+                                🧮 = {{ formatIDR(amountMath.result || 0) }}
+                            </span>
                         </div>
                     </div>
                     <!-- Warning Insufficient Balance -->

@@ -1,6 +1,9 @@
 // composables/useOfflineSync.ts
 // Logic to handle offline storage and background synchronization
 
+const isSyncing = ref(false)
+const syncError = ref<string | null>(null)
+
 export const useOfflineSync = () => {
   const isOnline = useOnline()
   
@@ -9,6 +12,7 @@ export const useOfflineSync = () => {
 
   // ── Save Transaction Locally ───────────────────────────────
   const saveOffline = (payload: any) => {
+    if (!import.meta.client) return null
     const pending = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
     const newEntry = {
       ...payload,
@@ -24,9 +28,12 @@ export const useOfflineSync = () => {
 
   // ── Sync Pending Transactions to Server ────────────────────
   const syncTransactions = async () => {
+    if (!import.meta.client || isSyncing.value) return
     const pending = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
     if (pending.length === 0) return
 
+    isSyncing.value = true
+    syncError.value = null
     console.log(`[Sync] Attempting to sync ${pending.length} transactions...`)
     
     const remaining = []
@@ -43,33 +50,43 @@ export const useOfflineSync = () => {
         })
         
         successCount++
-      } catch (err) {
+      } catch (err: any) {
         console.error('[Sync] Failed to sync transaction', tx, err)
+        syncError.value = err?.data?.message || 'Gagal menyinkronkan beberapa transaksi offline'
         remaining.push(tx) // Keep it in the queue if it failed
       }
     }
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(remaining))
+    isSyncing.value = false
 
     if (successCount > 0) {
-      // Trigger a refresh of the transaction list if needed
+      // Trigger a refresh of the transaction list
       refreshNuxtData('transactions-list')
       refreshNuxtData('dashboard-summary')
+      refreshNuxtData('wallets-list')
       
       console.log(`[Sync] Successfully synced ${successCount} transactions.`)
     }
   }
 
   // ── Watch for online status to trigger sync ────────────────
-  watch(isOnline, (online) => {
-    if (online) {
-      syncTransactions()
-    }
-  })
+  if (import.meta.client) {
+    watch(isOnline, (online) => {
+      if (online) {
+        syncTransactions()
+      }
+    })
+  }
 
   return {
     saveOffline,
     syncTransactions,
-    hasPending: computed(() => JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').length > 0)
+    isSyncing: readonly(isSyncing),
+    syncError: readonly(syncError),
+    hasPending: computed(() => {
+      if (!import.meta.client) return false
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').length > 0
+    })
   }
 }

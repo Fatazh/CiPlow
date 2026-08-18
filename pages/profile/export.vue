@@ -6,7 +6,7 @@ const router = useRouter();
 
 const now = new Date();
 const periodMode = ref<"monthly" | "yearly" | "all">("monthly");
-const format = ref<"xlsx" | "json">("xlsx");
+const format = ref<"xlsx" | "pdf" | "json">("xlsx");
 const selectedType = ref<"ALL" | "INCOME" | "EXPENSE" | "TRANSFER">("ALL");
 
 const period = reactive({
@@ -188,11 +188,11 @@ const handleDownload = async () => {
                             <label class="text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1">
                                 Format Berkas
                             </label>
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-3 gap-2">
                                 <button
                                     type="button"
                                     @click="format = 'xlsx'"
-                                    class="p-3 rounded-2xl border-2 text-left transition-all duration-200 flex flex-col gap-1"
+                                    class="p-2.5 rounded-2xl border-2 text-left transition-all duration-200 flex flex-col gap-1"
                                     :class="
                                         format === 'xlsx'
                                             ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 shadow-sm'
@@ -200,20 +200,41 @@ const handleDownload = async () => {
                                     "
                                 >
                                     <div class="flex items-center justify-between">
-                                        <span class="text-lg">📗</span>
+                                        <span class="text-base">📗</span>
                                         <span
                                             v-if="format === 'xlsx'"
-                                            class="w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold flex items-center justify-center"
+                                            class="w-3.5 h-3.5 rounded-full bg-emerald-500 text-white text-[8px] font-bold flex items-center justify-center"
                                         >✓</span>
                                     </div>
                                     <span class="text-xs font-bold text-gray-800 dark:text-gray-100">Excel (.xlsx)</span>
-                                    <span class="text-[10px] text-gray-400 dark:text-gray-500">Laporan & Ringkasan rapi</span>
+                                    <span class="text-[9px] text-gray-400 dark:text-gray-500 leading-tight">Spreadsheet Data</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    @click="format = 'pdf'"
+                                    class="p-2.5 rounded-2xl border-2 text-left transition-all duration-200 flex flex-col gap-1"
+                                    :class="
+                                        format === 'pdf'
+                                            ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 shadow-sm'
+                                            : 'border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 text-gray-500 hover:border-gray-200'
+                                    "
+                                >
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-base">📄</span>
+                                        <span
+                                            v-if="format === 'pdf'"
+                                            class="w-3.5 h-3.5 rounded-full bg-emerald-500 text-white text-[8px] font-bold flex items-center justify-center"
+                                        >✓</span>
+                                    </div>
+                                    <span class="text-xs font-bold text-gray-800 dark:text-gray-100">PDF Laporan</span>
+                                    <span class="text-[9px] text-gray-400 dark:text-gray-500 leading-tight">Siap Cetak / Bagikan</span>
                                 </button>
 
                                 <button
                                     type="button"
                                     @click="format = 'json'"
-                                    class="p-3 rounded-2xl border-2 text-left transition-all duration-200 flex flex-col gap-1"
+                                    class="p-2.5 rounded-2xl border-2 text-left transition-all duration-200 flex flex-col gap-1"
                                     :class="
                                         format === 'json'
                                             ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 shadow-sm'
@@ -221,14 +242,14 @@ const handleDownload = async () => {
                                     "
                                 >
                                     <div class="flex items-center justify-between">
-                                        <span class="text-lg">📦</span>
+                                        <span class="text-base">📦</span>
                                         <span
                                             v-if="format === 'json'"
-                                            class="w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold flex items-center justify-center"
+                                            class="w-3.5 h-3.5 rounded-full bg-emerald-500 text-white text-[8px] font-bold flex items-center justify-center"
                                         >✓</span>
                                     </div>
                                     <span class="text-xs font-bold text-gray-800 dark:text-gray-100">JSON Backup</span>
-                                    <span class="text-[10px] text-gray-400 dark:text-gray-500">Cadangan seluruh data</span>
+                                    <span class="text-[9px] text-gray-400 dark:text-gray-500 leading-tight">Cadangan Lengkap</span>
                                 </button>
                             </div>
                         </div>

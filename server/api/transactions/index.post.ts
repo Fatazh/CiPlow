@@ -159,8 +159,9 @@ export default defineEventHandler(async (event) => {
     })
 
     // Update wallet balances incrementally
+    let budgetAlert = null
     if (body.type === 'EXPENSE') {
-      await updateBudgetSpent(tx, user.id, body.categoryId, txDate, amount)
+      budgetAlert = await updateBudgetSpent(tx, user.id, body.categoryId, txDate, amount)
     }
 
     if (body.walletFromId) {
@@ -173,21 +174,22 @@ export default defineEventHandler(async (event) => {
       await adjustWalletBalance(tx, body.walletToId, amountToAdd)
     }
 
-    return transaction
+    return { transaction, budgetAlert }
   })
 
   return {
     ok: true,
     data: {
-      id: txResult.id,
-      amount: Number(txResult.amount),
-      type: txResult.type,
-      description: txResult.description,
-      date: txResult.date.toISOString(),
-      category: txResult.category.name,
-      walletFrom: txResult.walletFrom?.name ?? null,
-      walletTo: txResult.walletTo?.name ?? null,
-    }
+      id: txResult.transaction.id,
+      amount: Number(txResult.transaction.amount),
+      type: txResult.transaction.type,
+      description: txResult.transaction.description,
+      date: txResult.transaction.date.toISOString(),
+      category: txResult.transaction.category.name,
+      walletFrom: txResult.transaction.walletFrom?.name ?? null,
+      walletTo: txResult.transaction.walletTo?.name ?? null,
+    },
+    budgetAlert: txResult.budgetAlert,
   }
 })
 
