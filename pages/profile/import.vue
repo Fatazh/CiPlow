@@ -151,8 +151,7 @@ const handleImport = async () => {
                                     class="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed"
                                 >
                                     File harus memiliki header pada baris
-                                    pertama. Gunakan kolom berikut mulai dari
-                                    kolom <b>B</b>:
+                                    pertama. Gunakan kolom berikut (kompatibel dengan file hasil Export):
                                 </p>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div
@@ -201,7 +200,23 @@ const handleImport = async () => {
                                         <span class="font-bold text-primary-500"
                                             >G:</span
                                         >
-                                        Nominal (Angka)
+                                        Jumlah Item (Qty)
+                                    </div>
+                                    <div
+                                        class="p-2 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-[10px]"
+                                    >
+                                        <span class="font-bold text-primary-500"
+                                            >H:</span
+                                        >
+                                        Harga Satuan
+                                    </div>
+                                    <div
+                                        class="p-2 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-[10px]"
+                                    >
+                                        <span class="font-bold text-primary-500"
+                                            >I:</span
+                                        >
+                                        Total Bayar (Nominal)
                                     </div>
                                 </div>
                                 <p class="text-[9px] italic text-gray-400">
