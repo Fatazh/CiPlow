@@ -677,11 +677,6 @@ const handleAction = (action: string) => {
         </div>
 
         <!-- ══════════════════════════════════════════════
-         NESTED PAGES (Edit Profile, Currency, About)
-    ══════════════════════════════════════════════ -->
-        <NuxtPage />
-
-        <!-- ══════════════════════════════════════════════
          LOGOUT CONFIRMATION MODAL
     ══════════════════════════════════════════════ -->
         <Teleport to="body">
