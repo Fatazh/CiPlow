@@ -127,8 +127,8 @@ export default defineNuxtConfig({
     },
     workbox: {
       importScripts: ["/custom-sw.js"],
-      // Cache pages (navigations)
-      navigateFallback: "/",
+      // navigateFallback: null prevents workbox non-precached-url error in SSR/Node mode
+      navigateFallback: null,
       navigateFallbackDenylist: [/^\/api\//],
 
       // Runtime caching strategies
