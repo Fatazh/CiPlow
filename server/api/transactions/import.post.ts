@@ -37,6 +37,12 @@ export default defineEventHandler(async (event) => {
     prisma.wallet.findMany({ where: { userId: user.id } }),
   ])
 
+  // Determine format from header row (row 1)
+  const headerRow = worksheet.getRow(1)
+  const col7Header = headerRow.getCell(7).value?.toString()?.toLowerCase() || ''
+  const col9Header = headerRow.getCell(9).value?.toString()?.toLowerCase() || ''
+  const is10ColFormat = col7Header.includes('item') || col7Header.includes('jumlah') || col9Header.includes('total') || col9Header.includes('bayar')
+
   // Iterate rows (starting from row 2 to skip header)
   worksheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return
@@ -47,7 +53,26 @@ export default defineEventHandler(async (event) => {
       const categoryName = row.getCell(4).value?.toString() || ''
       const typeStr = row.getCell(5).value?.toString() || ''
       const walletName = row.getCell(6).value?.toString() || ''
-      const amount = Number(row.getCell(7).value)
+
+      let quantity = 1
+      let unitPrice: number | null = null
+      let amount = 0
+      let notes: string | null = null
+
+      if (is10ColFormat || (row.getCell(9).value !== null && row.getCell(9).value !== undefined)) {
+        quantity = Number(row.getCell(7).value) || 1
+        const rawUnitPrice = row.getCell(8).value
+        unitPrice = rawUnitPrice !== null && rawUnitPrice !== undefined && !isNaN(Number(rawUnitPrice)) ? Number(rawUnitPrice) : null
+        amount = Number(row.getCell(9).value)
+        notes = row.getCell(10).value?.toString() || null
+      } else {
+        amount = Number(row.getCell(7).value)
+        notes = row.getCell(8).value?.toString() || null
+      }
+
+      if ((!amount || isNaN(amount) || amount <= 0) && unitPrice && quantity) {
+        amount = unitPrice * quantity
+      }
 
       // Basic Validation
       if (!dateValue || isNaN(amount) || amount <= 0) {
@@ -81,6 +106,9 @@ export default defineEventHandler(async (event) => {
         categoryId: category.id,
         type,
         amount,
+        quantity,
+        unitPrice,
+        notes,
         walletFromId: type === 'EXPENSE' ? wallet?.id : null,
         walletToId: type === 'INCOME' ? wallet?.id : null,
       })

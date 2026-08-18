@@ -119,15 +119,16 @@ export default defineEventHandler(async (event) => {
   })
 
   // Define Columns
-  // Notice Kolom B-G match what import.post.ts expects:
   // Kolom A: No
   // Kolom B: Tanggal (DD/MM/YYYY)
   // Kolom C: Keterangan
   // Kolom D: Kategori
   // Kolom E: Tipe (Masuk / Keluar / Transfer)
   // Kolom F: Dompet
-  // Kolom G: Nominal
-  // Kolom H: Catatan
+  // Kolom G: Jumlah Item (Qty)
+  // Kolom H: Harga Satuan
+  // Kolom I: Total Bayar
+  // Kolom J: Catatan
   txSheet.columns = [
     { header: 'No', key: 'no', width: 6 },
     { header: 'Tanggal', key: 'date', width: 15 },
@@ -135,7 +136,9 @@ export default defineEventHandler(async (event) => {
     { header: 'Kategori', key: 'category', width: 22 },
     { header: 'Tipe', key: 'type', width: 14 },
     { header: 'Dompet', key: 'wallet', width: 24 },
-    { header: 'Nominal', key: 'amount', width: 20 },
+    { header: 'Jumlah Item', key: 'quantity', width: 14 },
+    { header: 'Harga Satuan', key: 'unitPrice', width: 18 },
+    { header: 'Total Bayar', key: 'amount', width: 20 },
     { header: 'Catatan', key: 'notes', width: 28 },
   ]
 
@@ -173,6 +176,11 @@ export default defineEventHandler(async (event) => {
   // Populate data rows
   transactions.forEach((tx, index) => {
     const rawAmount = Number(tx.amount)
+    const rawQty = tx.quantity && tx.quantity > 0 ? tx.quantity : 1
+    const rawUnitPrice = tx.unitPrice !== null && tx.unitPrice !== undefined 
+      ? Number(tx.unitPrice) 
+      : (rawQty > 1 ? rawAmount / rawQty : rawAmount)
+
     let typeLabel = 'Keluar'
     let walletName = tx.walletFrom?.name || '-'
 
@@ -191,6 +199,11 @@ export default defineEventHandler(async (event) => {
     const txDate = new Date(tx.date)
     const formattedDate = `${String(txDate.getDate()).padStart(2, '0')}/${String(txDate.getMonth() + 1).padStart(2, '0')}/${txDate.getFullYear()}`
 
+    let notesText = tx.notes || ''
+    if (tx.isPromo && tx.promoDetails) {
+      notesText = notesText ? `${notesText} (Promo: ${tx.promoDetails})` : `Promo: ${tx.promoDetails}`
+    }
+
     const row = txSheet.addRow({
       no: index + 1,
       date: formattedDate,
@@ -198,8 +211,10 @@ export default defineEventHandler(async (event) => {
       category: tx.category?.name || '-',
       type: typeLabel,
       wallet: walletName,
+      quantity: rawQty,
+      unitPrice: rawUnitPrice,
       amount: rawAmount,
-      notes: tx.notes || '',
+      notes: notesText,
     })
 
     row.height = 22
@@ -221,15 +236,20 @@ export default defineEventHandler(async (event) => {
       cell.font = { name: 'Calibri', size: 10 }
       cell.alignment = { vertical: 'middle' }
 
-      if (colNumber === 1 || colNumber === 2 || colNumber === 5) {
+      if (colNumber === 1 || colNumber === 2 || colNumber === 5 || colNumber === 7) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' }
-      } else if (colNumber === 7) {
+      } else if (colNumber === 8) {
+        cell.alignment = { vertical: 'middle', horizontal: 'right' }
+        cell.numFmt = '#,##0'
+      } else if (colNumber === 9) {
         cell.alignment = { vertical: 'middle', horizontal: 'right' }
         cell.numFmt = '#,##0'
         if (tx.type === 'INCOME') {
           cell.font = { name: 'Calibri', size: 10, color: { argb: 'FF059669' }, bold: true }
         } else if (tx.type === 'EXPENSE') {
           cell.font = { name: 'Calibri', size: 10, color: { argb: 'FFE11D48' } }
+        } else if (tx.type === 'TRANSFER') {
+          cell.font = { name: 'Calibri', size: 10, color: { argb: 'FF2563EB' } }
         }
       }
     })
@@ -247,6 +267,8 @@ export default defineEventHandler(async (event) => {
       category: '',
       type: '',
       wallet: '',
+      quantity: '',
+      unitPrice: '',
       amount: totalIncome - totalExpense,
       notes: `Pemasukan: ${totalIncome.toLocaleString('id-ID')} | Pengeluaran: ${totalExpense.toLocaleString('id-ID')}`
     })
@@ -265,7 +287,7 @@ export default defineEventHandler(async (event) => {
       if (colNumber === 3) {
         cell.alignment = { vertical: 'middle', horizontal: 'center' }
       }
-      if (colNumber === 7) {
+      if (colNumber === 9) {
         cell.alignment = { vertical: 'middle', horizontal: 'right' }
         cell.numFmt = '#,##0'
       }
