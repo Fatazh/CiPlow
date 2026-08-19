@@ -29,7 +29,7 @@
     }
 
     /* Ocean Blue */
-    html.theme-ocean {
+    :root.theme-ocean, html.theme-ocean {
         --color-primary: #0ea5e9;
         --color-primary-dk: #0284c7;
         --primary-50: #f0f9ff;
@@ -46,7 +46,7 @@
     }
 
     /* Royal Violet */
-    html.theme-violet {
+    :root.theme-violet, html.theme-violet {
         --color-primary: #8b5cf6;
         --color-primary-dk: #7c3aed;
         --primary-50: #f5f3ff;
@@ -63,7 +63,7 @@
     }
 
     /* Sunset Amber */
-    html.theme-amber {
+    :root.theme-amber, html.theme-amber {
         --color-primary: #f59e0b;
         --color-primary-dk: #d97706;
         --primary-50: #fffbeb;
@@ -80,7 +80,7 @@
     }
 
     /* Rose Pink */
-    html.theme-rose {
+    :root.theme-rose, html.theme-rose {
         --color-primary: #ec4899;
         --color-primary-dk: #db2777;
         --primary-50: #fff1f2;
@@ -102,8 +102,6 @@
         --color-border: #1e293b;
         --color-text: #f1f5f9;
         --color-text-muted: #94a3b8;
-        --color-primary: #10b981;
-        --color-primary-dk: #34d399;
     }
 
     *,
@@ -203,10 +201,10 @@
 
     /* ── Gradient card ── */
     .card-gradient {
-        @apply rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600 text-white;
+        @apply rounded-2xl overflow-hidden bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg;
     }
     .dark .card-gradient {
-        @apply from-emerald-500 to-emerald-700;
+        @apply from-primary-600 to-primary-800;
     }
 
     /* ── Typography ── */
@@ -241,7 +239,7 @@
         @apply flex items-center justify-center
            w-14 h-14 rounded-2xl
            text-white shadow-fab
-           bg-gradient-to-br from-emerald-500 to-emerald-600
+           bg-gradient-to-br from-primary-500 to-primary-600
            transition-all duration-200 active:scale-90 active:rotate-3;
     }
 

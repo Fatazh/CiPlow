@@ -122,7 +122,7 @@ const todayLabel = computed(() => formatDateFull(new Date()));
                         <!-- Initials fallback -->
                         <span
                             v-else
-                            class="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-400 to-teal-500 text-white text-xs font-bold select-none"
+                            class="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-400 to-primary-600 text-white text-xs font-bold select-none shadow-sm"
                         >
                             {{ initials }}
                         </span>
