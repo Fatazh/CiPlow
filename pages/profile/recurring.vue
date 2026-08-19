@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// pages/profile/recurring.vue — Full CRUD & Control Transaksi Berulang (v1.2.3)
+// pages/profile/recurring.vue — Full CRUD & Control Transaksi Berulang (v1.2.4)
 import { ref, onMounted, computed, reactive } from 'vue';
 
 useHead({ title: "Transaksi Berulang — CashPlow" });
