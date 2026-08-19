@@ -88,9 +88,12 @@ export default defineEventHandler(async (event) => {
       orderBy: { amount: "desc" },
     }),
 
-    // Last 5 transactions across all time
+    // Last 5 transactions in current month
     prisma.transaction.findMany({
-      where: { userId: uid },
+      where: {
+        userId: uid,
+        date: { gte: curStart, lte: curEnd },
+      },
       include: {
         category: true,
         walletFrom: true,
