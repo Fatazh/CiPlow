@@ -61,7 +61,18 @@ watch(() => props.initialAmount, (val) => {
 })
 
 // ── Calculation ──────────────────────────────────────────────────
-const subtotal = computed(() => Number(rawBillAmount.value) || 0)
+const totalCustomSum = computed(() => {
+  return participants.value.reduce((sum, p) => sum + (Number(p.customAmount) || 0), 0)
+})
+
+const subtotal = computed(() => {
+  const manual = Number(rawBillAmount.value) || 0
+  if (splitMode.value === 'CUSTOM' && manual === 0) {
+    return totalCustomSum.value
+  }
+  return manual
+})
+
 const taxAmount = computed(() => Math.round(subtotal.value * (Number(taxPercent.value) || 0) / 100))
 const serviceAmount = computed(() => Math.round(subtotal.value * (Number(servicePercent.value) || 0) / 100))
 const grandTotal = computed(() => subtotal.value + taxAmount.value + serviceAmount.value)
@@ -119,9 +130,12 @@ const removeParticipant = (id: string) => {
   triggerHaptic('light')
 }
 
-const onCustomAmountInput = (p: Participant, e: Event) => {
+const onCustomAmountInput = (id: string, e: Event) => {
+  const target = participants.value.find(item => item.id === id)
+  if (!target) return
   const val = (e.target as HTMLInputElement).value.replace(/\D/g, '')
-  p.customAmount = parseInt(val) || 0
+  const num = parseInt(val) || 0
+  target.customAmount = num
 }
 
 // ── Quick Save as Debt (Piutang) ─────────────────────────────────
@@ -365,7 +379,7 @@ const copySummary = () => {
                         inputmode="numeric"
                         :value="p.customAmount ? p.customAmount.toLocaleString('id-ID') : ''"
                         placeholder="0"
-                        @input="onCustomAmountInput(p, $event)"
+                        @input="onCustomAmountInput(p.id, $event)"
                         class="w-24 px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-surface-800 text-xs font-bold focus:outline-none focus:border-primary-500"
                       />
                     </div>
