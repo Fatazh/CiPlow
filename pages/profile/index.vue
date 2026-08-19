@@ -90,9 +90,9 @@ const accountMenus = [
     {
         icon: "🔔",
         label: "Notifikasi",
-        desc: "Atur preferensi notifikasi",
+        desc: "Atur preferensi notifikasi & alert",
         action: "notifications",
-        comingSoon: true,
+        comingSoon: false,
     },
     {
         icon: "💱",
@@ -185,6 +185,7 @@ const handleAction = (action: string) => {
             "about",
             "security",
             "recurring",
+            "notifications",
             "export",
             "import",
         ].includes(action)

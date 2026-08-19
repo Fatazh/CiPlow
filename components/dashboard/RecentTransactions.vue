@@ -128,7 +128,7 @@ const onPress = (id: string) => {
           Transaksi Terbaru
         </h3>
         <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
-          5 transaksi terakhir
+          5 transaksi terakhir bulan ini
         </p>
       </div>
 
@@ -153,25 +153,32 @@ const onPress = (id: string) => {
     <!-- ── Empty state ─────────────────────────────────────── -->
     <div
       v-if="!transactions.length"
-      class="flex flex-col items-center justify-center py-12 px-4 text-center"
+      class="flex flex-col items-center justify-center py-10 px-4 text-center space-y-2"
     >
       <span
         class="
           flex items-center justify-center
-          w-16 h-16 rounded-full
+          w-14 h-14 rounded-2xl
           bg-gray-100 dark:bg-gray-800
           text-gray-400
-          mb-3
+          mx-auto
         "
       >
-        <ReceiptIcon :size="28" :stroke-width="1.5" />
+        <ReceiptIcon :size="26" :stroke-width="1.5" />
       </span>
       <p class="text-sm font-semibold text-gray-600 dark:text-gray-300">
-        Belum ada transaksi
+        Belum ada transaksi bulan ini
       </p>
-      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-[200px]">
-        Tekan tombol <span class="font-semibold text-primary-500">+</span> untuk menambahkan transaksi pertama kamu
+      <p class="text-xs text-gray-400 dark:text-gray-500 max-w-[240px] mx-auto">
+        Catat transaksi baru dengan tombol <span class="font-bold text-primary-500">+</span> atau lihat riwayat bulan sebelumnya.
       </p>
+      <NuxtLink
+        to="/transactions"
+        class="inline-flex items-center gap-1 text-xs font-bold text-primary-500 hover:text-primary-600 pt-1"
+      >
+        <span>Lihat Semua Riwayat</span>
+        <ChevronRightIcon :size="13" :stroke-width="2.5" />
+      </NuxtLink>
     </div>
 
     <!-- ── Transaction list ─────────────────────────────────── -->
