@@ -45,7 +45,9 @@ const savingsRate = computed(() => {
 const activeDaysCount = computed(() => {
     const set = new Set<string>()
     for (const t of currentMonthTransactions.value) {
-        set.add(t.date.split('T')[0])
+        if (!t.date) continue
+        const d = t.date.split('T')[0]
+        if (d) set.add(d)
     }
     return set.size
 })

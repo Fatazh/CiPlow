@@ -93,8 +93,8 @@ const query = getQuery(event) as {
       description: tx.description,
       notes: tx.notes,
       date: tx.date.toISOString(),
-      tags: tx.tags || [],
-      receiptImage: tx.receiptImage || null,
+      tags: (tx as any).tags || [],
+      receiptImage: (tx as any).receiptImage || null,
       category: {
         id: tx.category.id,
         name: tx.category.name,

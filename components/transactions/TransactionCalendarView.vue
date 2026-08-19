@@ -73,7 +73,10 @@ const nextMonth = () => {
 const dateSummaryMap = computed(() => {
     const map = new Map<string, { income: number; expense: number; count: number; items: TransactionItem[] }>()
     for (const tx of props.transactions) {
+        if (!tx.date) continue
         const d = tx.date.split('T')[0]
+        if (!d) continue
+
         if (!map.has(d)) {
             map.set(d, { income: 0, expense: 0, count: 0, items: [] })
         }
@@ -105,7 +108,7 @@ const calendarDays = computed(() => {
     const daysInMonth = new Date(year, month + 1, 0).getDate()
     const daysInPrevMonth = new Date(year, month, 0).getDate()
 
-    const todayStr = new Date().toISOString().split('T')[0]
+    const todayStr = new Date().toISOString().split('T')[0] || ''
 
     const cells: CalendarCell[] = []
 
