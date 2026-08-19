@@ -138,7 +138,7 @@ const appMenus = [
     {
         icon: "ℹ️",
         label: "Tentang App",
-        desc: "Versi 1.2.1 — CashPlow Budget Tracker",
+        desc: "Versi 1.2.2 — CashPlow Budget Tracker",
         action: "about",
         comingSoon: false,
     },
@@ -667,7 +667,7 @@ const handleAction = (action: string) => {
                 <span class="text-sm font-bold text-gradient">CashPlow</span>
             </div>
             <p class="text-[10px] text-gray-300 dark:text-gray-600 font-medium">
-                Budget Tracker · v1.2.1
+                Budget Tracker · v1.2.2
             </p>
             <p class="text-[10px] text-gray-300 dark:text-gray-600">
                 © 2026 CashPlow. All rights reserved.
