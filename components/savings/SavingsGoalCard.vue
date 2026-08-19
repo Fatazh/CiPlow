@@ -21,7 +21,16 @@ const emit = defineEmits<{
   (e: 'delete', goal: any): void
 }>()
 
-const { formatIDR } = useCurrency()
+const { formatIDR, maskBalance } = useCurrency()
+
+// Proyeksi estimasi tabungan bulanan yang dibutuhkan
+const monthlyNeeded = computed(() => {
+  if (!props.goal.deadline || props.goal.isCompleted || props.goal.remaining <= 0) return null
+  const now = new Date()
+  const deadline = new Date(props.goal.deadline)
+  const diffMonths = Math.max(1, (deadline.getFullYear() - now.getFullYear()) * 12 + (deadline.getMonth() - now.getMonth()))
+  return Math.ceil(props.goal.remaining / diffMonths)
+})
 </script>
 
 <template>
@@ -81,10 +90,10 @@ const { formatIDR } = useCurrency()
       <div class="flex items-baseline justify-between">
         <div>
           <span class="text-base font-black text-gray-800 dark:text-gray-100">
-            {{ formatIDR(goal.currentAmount) }}
+            {{ maskBalance(formatIDR(goal.currentAmount)) }}
           </span>
           <span class="text-[11px] text-gray-400 font-medium ml-1">
-            / {{ formatIDR(goal.targetAmount) }}
+            / {{ maskBalance(formatIDR(goal.targetAmount)) }}
           </span>
         </div>
         <span class="text-xs font-black text-primary-500">
@@ -104,10 +113,16 @@ const { formatIDR } = useCurrency()
       </div>
     </div>
 
+    <!-- Projection hint if deadline is set -->
+    <div v-if="monthlyNeeded" class="mt-2.5 px-2.5 py-1.5 rounded-xl bg-primary-50/70 dark:bg-primary-950/30 text-[10px] text-primary-700 dark:text-primary-300 font-semibold flex items-center gap-1.5">
+      <span>💡</span>
+      <span>Butuh setoran rutin <b>~{{ formatIDR(monthlyNeeded) }}/bln</b> agar tercapai tepat waktu</span>
+    </div>
+
     <!-- Quick Deposit Button -->
     <div class="mt-3.5 flex items-center justify-between pt-3 border-t border-gray-50 dark:border-gray-800/60">
       <span class="text-[11px] text-gray-400 font-medium">
-        {{ goal.remaining > 0 ? `Kurang ${formatIDR(goal.remaining)} lagi` : 'Target tabungan sudah lunas!' }}
+        {{ goal.remaining > 0 ? `Kurang ${maskBalance(formatIDR(goal.remaining))} lagi` : 'Target tabungan sudah lunas!' }}
       </span>
       <button
         @click="emit('deposit', goal)"

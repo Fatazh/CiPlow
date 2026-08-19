@@ -48,6 +48,8 @@ const showFormModal = ref(false)
 const selectedDebtForEdit = ref<any>(null)
 const showPayModal = ref(false)
 const selectedDebtForPay = ref<any>(null)
+const showHistoryModal = ref(false)
+const selectedDebtForHistory = ref<any>(null)
 
 // Toast
 const toast = reactive({
@@ -55,6 +57,21 @@ const toast = reactive({
   message: '',
   type: 'success' as 'success' | 'error',
 })
+
+const handleOpenHistory = (debt: any) => {
+  selectedDebtForHistory.value = debt
+  showHistoryModal.value = true
+}
+
+const shareWhatsAppReminder = (debt: any) => {
+  const formattedRemaining = formatIDR(debt.remainingAmount)
+  const dueDateText = debt.dueDate
+    ? `yang jatuh tempo pada tanggal ${new Date(debt.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
+    : ''
+  const text = `Halo ${debt.personName}, sekadar mengingatkan terkait catatan piutang sebesar ${formattedRemaining} ${dueDateText}. Terima kasih banyak sebelumnya ya! 🙏✨`
+  const url = `https://wa.me/?text=${encodeURIComponent(text)}`
+  window.open(url, '_blank')
+}
 
 const handleOpenCreate = (type: 'LEND' | 'BORROW' = 'LEND') => {
   selectedDebtForEdit.value = { type }
@@ -240,6 +257,27 @@ const handlePaySuccess = async (msg: string) => {
 
           <!-- Actions -->
           <div class="flex items-center gap-1.5">
+            <!-- WhatsApp Reminder Button for Piutang -->
+            <button
+              v-if="item.type === 'LEND' && item.status !== 'PAID'"
+              @click="shareWhatsAppReminder(item)"
+              class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold flex items-center gap-1 transition-colors"
+              title="Kirim Pengingat WhatsApp"
+            >
+              <span>💬</span>
+              <span>Ingatkan WA</span>
+            </button>
+
+            <!-- Payment History Button -->
+            <button
+              @click="handleOpenHistory(item)"
+              class="px-2 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-[11px] font-semibold flex items-center gap-1 transition-colors"
+              title="Lihat Riwayat Cicilan"
+            >
+              <span>📋</span>
+              <span v-if="item.payments?.length">({{ item.payments.length }})</span>
+            </button>
+
             <span
               v-if="item.status === 'PAID'"
               class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400"
@@ -328,6 +366,11 @@ const handlePaySuccess = async (msg: string) => {
       :wallets="wallets"
       @close="showPayModal = false"
       @success="handlePaySuccess"
+    />
+
+    <DebtPaymentsHistoryModal
+      v-model="showHistoryModal"
+      :debt="selectedDebtForHistory"
     />
 
     <!-- Toast -->

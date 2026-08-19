@@ -38,12 +38,11 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 // ── Currency ────────────────────────────────────────────────────
-const { formatIDR, formatCompact } = useCurrency();
+const { formatIDR, formatCompact, isBalanceHidden, toggleBalanceHidden } = useCurrency();
 
-// ── Balance visibility toggle ──────────────────────────────────
-const isVisible = ref(true);
+const isVisible = computed(() => !isBalanceHidden.value);
 const toggleVisibility = () => {
-    isVisible.value = !isVisible.value;
+    toggleBalanceHidden();
 };
 
 // ── Masked balance display ─────────────────────────────────────

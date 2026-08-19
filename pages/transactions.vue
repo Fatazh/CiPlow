@@ -3,7 +3,7 @@
 
 useHead({ title: "Riwayat Transaksi — CashPlow" });
 
-const { formatIDR } = useCurrency();
+const { formatIDR, maskBalance } = useCurrency();
 const { formatSmart, groupByDate } = useDate();
 
 // ── Filters ─────────────────────────────────────────────────
@@ -529,7 +529,7 @@ watch(searchInput, (val) => {
                                             : tx.type === "EXPENSE"
                                               ? "-"
                                               : ""
-                                    }}{{ formatIDR(tx.amount) }}
+                                    }}{{ maskBalance(formatIDR(tx.amount)) }}
                                 </p>
                             </div>
                         </div>

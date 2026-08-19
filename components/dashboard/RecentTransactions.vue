@@ -28,7 +28,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // ── Composables ────────────────────────────────────────────────
-const { formatIDR } = useCurrency()
+const { formatIDR, maskBalance } = useCurrency()
 const { formatSmart } = useDate()
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -290,7 +290,7 @@ const onPress = (id: string) => {
             class="text-sm font-bold leading-tight"
             :class="typeConfig(tx.type).amountClass"
           >
-            {{ typeConfig(tx.type).sign }}{{ formatIDR(tx.amount) }}
+            {{ typeConfig(tx.type).sign }}{{ maskBalance(formatIDR(tx.amount)) }}
           </p>
 
           <!-- Smart date -->

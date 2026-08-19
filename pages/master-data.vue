@@ -4,7 +4,7 @@
 
 useHead({ title: "Master Data — CashPlow" });
 
-const { formatIDR, formatCompact } = useCurrency();
+const { formatIDR, formatCompact, maskBalance } = useCurrency();
 
 // ── Active tab ────────────────────────────────────────────────
 const activeTab = ref<"wallet" | "category" | "budget">("wallet");
@@ -825,7 +825,7 @@ const onWalletBalanceInput = (e: Event) => {
                             <p
                                 class="text-xl font-bold leading-none tracking-tight drop-shadow-lg truncate"
                             >
-                                {{ formatIDR(wallet.balance) }}
+                                {{ maskBalance(formatIDR(wallet.balance)) }}
                             </p>
                         </div>
 

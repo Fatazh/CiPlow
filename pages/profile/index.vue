@@ -124,25 +124,37 @@ const appMenus = [
     {
         icon: "⭐",
         label: "Beri Rating",
-        desc: "Nilai aplikasi ini",
+        desc: "Nilai & beri masukan untuk aplikasi",
         action: "rate",
-        comingSoon: true,
+        comingSoon: false,
     },
     {
         icon: "🐛",
         label: "Laporkan Bug",
-        desc: "Temukan masalah? Beritahu kami",
+        desc: "Temukan kendala? Beritahu kami",
         action: "bug",
-        comingSoon: true,
+        comingSoon: false,
     },
     {
         icon: "ℹ️",
         label: "Tentang App",
-        desc: "Versi 1.2.2 — CashPlow Budget Tracker",
+        desc: "Versi 1.2.3 — CashPlow Budget Tracker",
         action: "about",
         comingSoon: false,
     },
 ];
+
+// ── Feedback / Rating Modal ────────────────────────────────────
+const showFeedbackModal = ref(false);
+const feedbackMode = ref<'RATING' | 'BUG_REPORT'>('RATING');
+const feedbackSuccessToast = ref('');
+
+const onFeedbackSuccess = (msg: string) => {
+    feedbackSuccessToast.value = msg;
+    setTimeout(() => {
+        feedbackSuccessToast.value = '';
+    }, 4000);
+};
 
 // ── Confirm logout modal ───────────────────────────────────────
 const showLogoutModal = ref(false);
@@ -191,10 +203,15 @@ const handleAction = (action: string) => {
         ].includes(action)
     ) {
         router.push(`/profile/${action}`);
+    } else if (action === "rate") {
+        feedbackMode.value = "RATING";
+        showFeedbackModal.value = true;
+    } else if (action === "bug") {
+        feedbackMode.value = "BUG_REPORT";
+        showFeedbackModal.value = true;
     } else if (action === "reset") {
         showResetModal.value = true;
     } else {
-        // For others that might not be implemented yet
         alert(`Fitur ${action} sedang dalam tahap pengembangan!`);
     }
 };
@@ -850,5 +867,34 @@ const handleAction = (action: string) => {
                 </div>
             </Transition>
         </Teleport>
+
+        <!-- Feedback & Rating Modal -->
+        <FeedbackModal
+            v-model="showFeedbackModal"
+            :mode="feedbackMode"
+            @success="onFeedbackSuccess"
+        />
+
+        <!-- Feedback Success Toast -->
+        <Transition
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 -translate-y-4"
+            enter-to-class="opacity-100 translate-y-0"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 translate-y-0"
+            leave-to-class="opacity-0 -translate-y-4"
+        >
+            <div
+                v-if="feedbackSuccessToast"
+                class="fixed top-5 inset-x-0 z-[150] flex justify-center px-4 pointer-events-none"
+            >
+                <div
+                    class="px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs font-bold bg-emerald-600 text-white pointer-events-auto"
+                >
+                    <span>✓</span>
+                    <span>{{ feedbackSuccessToast }}</span>
+                </div>
+            </div>
+        </Transition>
     </div>
 </template>

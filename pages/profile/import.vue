@@ -1,69 +1,102 @@
 <script setup lang="ts">
-// pages/profile/import.vue — Import data modal
-
-useHead({ title: "Import Data — CashPlow" });
+// pages/profile/import.vue — Import & Restore Data (Excel & JSON Backup)
+useHead({ title: "Import & Restore Data — CashPlow" });
 const router = useRouter();
 
+// Tab state: 'EXCEL' | 'JSON'
+const activeTab = ref<'EXCEL' | 'JSON'>('EXCEL');
+
+// ── File States ────────────────────────────────────────────────
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFile = ref<File | null>(null);
 const loading = ref(false);
 const error = ref("");
 const successMessage = ref("");
 const importErrors = ref<string[]>([]);
+const restoreStats = ref<any>(null);
 
 const triggerFileSelect = () => {
     fileInput.value?.click();
 };
 
+const handleTabChange = (tab: 'EXCEL' | 'JSON') => {
+    activeTab.value = tab;
+    selectedFile.value = null;
+    error.value = "";
+    successMessage.value = "";
+    importErrors.value = [];
+    restoreStats.value = null;
+    if (fileInput.value) fileInput.value.value = "";
+};
+
 const handleFileChange = (event: Event) => {
     const target = event.target as HTMLInputElement;
     const file = target.files?.[0];
-    if (file) {
-        if (!file.name.endsWith(".xlsx")) {
-            error.value = "Hanya mendukung file format .xlsx (Excel)";
-            selectedFile.value = null;
-            return;
-        }
-        selectedFile.value = file;
-        error.value = "";
+    if (!file) return;
+
+    if (activeTab.value === 'EXCEL' && !file.name.endsWith('.xlsx')) {
+        error.value = "Hanya mendukung berkas format .xlsx (Excel)";
+        selectedFile.value = null;
+        return;
     }
+    if (activeTab.value === 'JSON' && !file.name.endsWith('.json')) {
+        error.value = "Hanya mendukung berkas cadangan format .json";
+        selectedFile.value = null;
+        return;
+    }
+
+    selectedFile.value = file;
+    error.value = "";
+    successMessage.value = "";
+    importErrors.value = [];
+    restoreStats.value = null;
 };
 
-const handleImport = async () => {
+const handleExecute = async () => {
     if (!selectedFile.value) return;
 
     loading.value = true;
     error.value = "";
     importErrors.value = [];
     successMessage.value = "";
+    restoreStats.value = null;
 
     const formData = new FormData();
     formData.append("file", selectedFile.value);
 
     try {
-        const response: any = await $fetch("/api/transactions/import", {
-            method: "POST",
-            body: formData,
-        });
+        if (activeTab.value === 'EXCEL') {
+            const response: any = await $fetch("/api/transactions/import", {
+                method: "POST",
+                body: formData,
+            });
 
-        if (response.ok) {
-            successMessage.value = response.message;
-            if (response.errors) {
-                importErrors.value = response.errors;
+            if (response.ok) {
+                successMessage.value = response.message;
+                if (response.errors) {
+                    importErrors.value = response.errors;
+                }
+                selectedFile.value = null;
+                if (fileInput.value) fileInput.value.value = "";
             }
-            // Clear after success
-            selectedFile.value = null;
-            if (fileInput.value) fileInput.value.value = "";
+        } else {
+            // Restore JSON
+            const response: any = await $fetch("/api/transactions/restore", {
+                method: "POST",
+                body: formData,
+            });
 
-            // Auto-back after 3 seconds if no row-level errors
-            if (!response.errors) {
-                setTimeout(() => close(), 3000);
+            if (response.ok) {
+                successMessage.value = response.message;
+                restoreStats.value = response.stats;
+                selectedFile.value = null;
+                if (fileInput.value) fileInput.value.value = "";
             }
         }
     } catch (err: any) {
         error.value =
             err.data?.message ||
-            "Gagal mengimpor data. Pastikan format file sesuai template.";
+            "Gagal memproses data. Pastikan format berkas sesuai template.";
     } finally {
         loading.value = false;
     }
@@ -85,6 +118,7 @@ const handleImport = async () => {
                 @click.self="router.back()"
             >
                 <Transition
+                    appear
                     enter-active-class="transition-all duration-300 cubic-bezier(0.34,1.56,0.64,1)"
                     enter-from-class="opacity-0 translate-y-8 scale-95"
                     enter-to-class="opacity-100 translate-y-0 scale-100"
@@ -96,7 +130,7 @@ const handleImport = async () => {
                         class="w-full max-w-app bg-white dark:bg-surface-900 rounded-3xl p-6 shadow-2xl overflow-y-auto max-h-[90vh]"
                     >
                         <!-- Header -->
-                        <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center justify-between mb-5">
                             <button
                                 @click="router.back()"
                                 class="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
@@ -116,19 +150,50 @@ const handleImport = async () => {
                             <h1
                                 class="text-lg font-bold text-gray-800 dark:text-gray-100"
                             >
-                                Import Data
+                                Impor & Pulihkan Data
                             </h1>
                             <div class="w-10"></div>
                         </div>
 
-                        <div class="space-y-5 py-2">
+                        <!-- Tab Switcher -->
+                        <div class="flex p-1 rounded-2xl bg-gray-100 dark:bg-gray-800/60 mb-5">
+                            <button
+                                @click="handleTabChange('EXCEL')"
+                                class="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                                :class="activeTab === 'EXCEL' ? 'bg-white dark:bg-surface-900 text-gray-800 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600'"
+                            >
+                                <span>📊</span>
+                                <span>Impor Transaksi (.xlsx)</span>
+                            </button>
+                            <button
+                                @click="handleTabChange('JSON')"
+                                class="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                                :class="activeTab === 'JSON' ? 'bg-white dark:bg-surface-900 text-gray-800 dark:text-gray-100 shadow-sm' : 'text-gray-400 hover:text-gray-600'"
+                            >
+                                <span>📦</span>
+                                <span>Restore Cadangan (.json)</span>
+                            </button>
+                        </div>
+
+                        <div class="space-y-4">
                             <!-- Success/Error States -->
                             <div
                                 v-if="successMessage"
-                                class="p-4 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-sm font-bold rounded-2xl border border-emerald-100 dark:border-emerald-800/50 flex items-center gap-3"
+                                class="p-4 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold rounded-2xl border border-emerald-100 dark:border-emerald-800/50 flex items-start gap-3"
                             >
-                                <span>✅</span>
-                                <span>{{ successMessage }}</span>
+                                <span class="text-lg leading-none">✅</span>
+                                <div>
+                                    <p>{{ successMessage }}</p>
+                                    <!-- Stats display for JSON restore -->
+                                    <div v-if="restoreStats" class="mt-2 grid grid-cols-2 gap-1.5 text-[11px] text-emerald-800 dark:text-emerald-300">
+                                        <div>• Transaksi: <b>{{ restoreStats.transactionsCount }}</b></div>
+                                        <div>• Dompet Baru: <b>{{ restoreStats.walletsCount }}</b></div>
+                                        <div>• Kategori Baru: <b>{{ restoreStats.categoriesCount }}</b></div>
+                                        <div>• Anggaran: <b>{{ restoreStats.budgetsCount }}</b></div>
+                                        <div>• Tabungan: <b>{{ restoreStats.savingsCount }}</b></div>
+                                        <div>• Hutang/Piutang: <b>{{ restoreStats.debtsCount }}</b></div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div
@@ -138,96 +203,63 @@ const handleImport = async () => {
                                 {{ error }}
                             </div>
 
-                            <!-- Format Instructions -->
+                            <!-- Format Instructions: EXCEL -->
                             <div
-                                class="card bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-3"
+                                v-if="activeTab === 'EXCEL'"
+                                class="card bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-2.5"
                             >
                                 <h3
                                     class="text-xs font-black uppercase tracking-widest text-gray-400"
                                 >
-                                    Instruksi Format Excel
+                                    Instruksi Format Excel (.xlsx)
                                 </h3>
                                 <p
                                     class="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed"
                                 >
-                                    File harus memiliki header pada baris
-                                    pertama. Gunakan kolom berikut (kompatibel dengan file hasil Export):
+                                    File harus memiliki header pada baris pertama dan format kolom yang kompatibel dengan hasil Export CashPlow:
                                 </p>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div
-                                        class="p-2 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-[10px]"
-                                    >
-                                        <span class="font-bold text-primary-500"
-                                            >B:</span
-                                        >
-                                        Tanggal (DD/MM/YYYY)
+                                <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+                                    <div class="p-1.5 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800">
+                                        <b class="text-primary-500">B:</b> Tanggal (DD/MM/YYYY)
                                     </div>
-                                    <div
-                                        class="p-2 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-[10px]"
-                                    >
-                                        <span class="font-bold text-primary-500"
-                                            >C:</span
-                                        >
-                                        Keterangan
+                                    <div class="p-1.5 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800">
+                                        <b class="text-primary-500">C:</b> Keterangan
                                     </div>
-                                    <div
-                                        class="p-2 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-[10px]"
-                                    >
-                                        <span class="font-bold text-primary-500"
-                                            >D:</span
-                                        >
-                                        Nama Kategori
+                                    <div class="p-1.5 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800">
+                                        <b class="text-primary-500">D:</b> Kategori
                                     </div>
-                                    <div
-                                        class="p-2 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-[10px]"
-                                    >
-                                        <span class="font-bold text-primary-500"
-                                            >E:</span
-                                        >
-                                        Tipe (Masuk/Keluar)
+                                    <div class="p-1.5 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800">
+                                        <b class="text-primary-500">E:</b> Tipe (Masuk/Keluar)
                                     </div>
-                                    <div
-                                        class="p-2 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-[10px]"
-                                    >
-                                        <span class="font-bold text-primary-500"
-                                            >F:</span
-                                        >
-                                        Nama Dompet
+                                    <div class="p-1.5 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800">
+                                        <b class="text-primary-500">F:</b> Dompet
                                     </div>
-                                    <div
-                                        class="p-2 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-[10px]"
-                                    >
-                                        <span class="font-bold text-primary-500"
-                                            >G:</span
-                                        >
-                                        Jumlah Item (Qty)
-                                    </div>
-                                    <div
-                                        class="p-2 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-[10px]"
-                                    >
-                                        <span class="font-bold text-primary-500"
-                                            >H:</span
-                                        >
-                                        Harga Satuan
-                                    </div>
-                                    <div
-                                        class="p-2 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-[10px]"
-                                    >
-                                        <span class="font-bold text-primary-500"
-                                            >I:</span
-                                        >
-                                        Total Bayar (Nominal)
+                                    <div class="p-1.5 rounded-lg bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800">
+                                        <b class="text-primary-500">I:</b> Total Nominal
                                     </div>
                                 </div>
-                                <p class="text-[9px] italic text-gray-400">
-                                    Tips: Nama Kategori dan Dompet harus persis
-                                    sama dengan yang ada di aplikasi.
+                            </div>
+
+                            <!-- Format Instructions: JSON -->
+                            <div
+                                v-else
+                                class="card bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-2.5"
+                            >
+                                <h3
+                                    class="text-xs font-black uppercase tracking-widest text-gray-400"
+                                >
+                                    Instruksi Pemulihan Cadangan JSON
+                                </h3>
+                                <p
+                                    class="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed"
+                                >
+                                    Gunakan berkas cadangan <code>.json</code> yang diunduh dari menu <b>Export Data > Format JSON Backup</b>. Seluruh entitas (Dompet, Kategori, Transaksi, Anggaran, Jadwal Rutin, Tabungan, dan Hutang) akan dipulihkan secara otomatis.
                                 </p>
                             </div>
 
                             <!-- Upload Area -->
                             <div
-                                class="border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center text-center gap-3 transition-all duration-300 cursor-pointer"
+                                class="border-2 border-dashed rounded-3xl p-7 flex flex-col items-center justify-center text-center gap-2.5 transition-all duration-300 cursor-pointer"
                                 :class="
                                     selectedFile
                                         ? 'border-primary-500 bg-primary-50/10'
@@ -238,37 +270,37 @@ const handleImport = async () => {
                                 <input
                                     ref="fileInput"
                                     type="file"
-                                    accept=".xlsx"
+                                    :accept="activeTab === 'EXCEL' ? '.xlsx' : '.json'"
                                     class="hidden"
                                     @change="handleFileChange"
                                 />
 
                                 <div
-                                    class="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl"
+                                    class="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl shadow-sm"
                                 >
-                                    {{ selectedFile ? "📄" : "📁" }}
+                                    {{ selectedFile ? (activeTab === 'EXCEL' ? '📊' : '📦') : '📁' }}
                                 </div>
 
                                 <div v-if="selectedFile">
                                     <p
-                                        class="text-sm font-bold text-gray-800 dark:text-gray-100 truncate max-w-[200px]"
+                                        class="text-xs font-bold text-gray-800 dark:text-gray-100 truncate max-w-[220px]"
                                     >
                                         {{ selectedFile.name }}
                                     </p>
                                     <p
-                                        class="text-[10px] text-primary-500 font-bold mt-1 uppercase tracking-tighter"
+                                        class="text-[10px] text-primary-500 font-bold mt-0.5 uppercase tracking-tighter"
                                     >
-                                        File Terpilih
+                                        Berkas Siap Diproses ({{ (selectedFile.size / 1024).toFixed(1) }} KB)
                                     </p>
                                 </div>
                                 <div v-else>
                                     <p
-                                        class="text-sm font-bold text-gray-600 dark:text-gray-300"
+                                        class="text-xs font-bold text-gray-700 dark:text-gray-200"
                                     >
-                                        Pilih File Excel
+                                        {{ activeTab === 'EXCEL' ? 'Pilih Berkas Excel (.xlsx)' : 'Pilih Berkas Cadangan (.json)' }}
                                     </p>
-                                    <p class="text-[10px] text-gray-400 mt-1">
-                                        Tap untuk mencari file .xlsx
+                                    <p class="text-[10px] text-gray-400 mt-0.5">
+                                        Tap untuk memilih file dari penyimpanan Anda
                                     </p>
                                 </div>
                             </div>
@@ -294,17 +326,17 @@ const handleImport = async () => {
 
                             <button
                                 :disabled="!selectedFile || loading"
-                                class="w-full py-4 rounded-2xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-bold shadow-lg shadow-primary-500/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                                @click="handleImport"
+                                class="w-full py-4 rounded-2xl bg-primary-500 hover:bg-primary-600 text-white text-xs font-bold shadow-lg shadow-primary-500/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5"
+                                @click="handleExecute"
                             >
                                 <div
                                     v-if="loading"
-                                    class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                                    class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
                                 ></div>
                                 <span>{{
                                     loading
-                                        ? "Memproses Import..."
-                                        : "Mulai Import Data"
+                                        ? "Sedang Memproses Data..."
+                                        : (activeTab === 'EXCEL' ? "Mulai Impor Transaksi Excel" : "Pulihkan Seluruh Data Cadangan")
                                 }}</span>
                             </button>
                         </div>

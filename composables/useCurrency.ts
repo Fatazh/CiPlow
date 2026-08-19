@@ -187,6 +187,13 @@ export const useCurrency = () => {
     };
   };
 
+  /**
+   * Mask balance if global privacy mode is enabled
+   */
+  const maskBalance = (formattedValue: string): string => {
+    return userStore.isBalanceHidden ? "••••••••" : formattedValue;
+  };
+
   return {
     formatIDR,
     formatCompact,
@@ -197,5 +204,8 @@ export const useCurrency = () => {
     formatPercent,
     formatBudgetProgress,
     getBudgetColor,
+    isBalanceHidden: computed(() => userStore.isBalanceHidden),
+    toggleBalanceHidden: userStore.toggleBalanceHidden,
+    maskBalance,
   };
 };

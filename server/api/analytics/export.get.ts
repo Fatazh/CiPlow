@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
 
   // Handle JSON backup format
   if (format === 'json') {
-    const [wallets, categories, transactions, budgets, recurring] = await Promise.all([
+    const [wallets, categories, transactions, budgets, recurring, savingsGoals, debts] = await Promise.all([
       prisma.wallet.findMany({ where: { userId: user.id } }),
       prisma.category.findMany({ where: { userId: user.id } }),
       prisma.transaction.findMany({
@@ -64,10 +64,15 @@ export default defineEventHandler(async (event) => {
       }),
       prisma.budget.findMany({ where: { userId: user.id } }),
       prisma.recurringTransaction.findMany({ where: { userId: user.id } }),
+      prisma.savingsGoal.findMany({ where: { userId: user.id } }),
+      prisma.debt.findMany({
+        where: { userId: user.id },
+        include: { payments: true }
+      }),
     ])
 
     const exportData = {
-      version: '1.2.1',
+      version: '1.2.3',
       appName: 'CashPlow',
       exportDate: new Date().toISOString(),
       period: periodLabel,
@@ -83,6 +88,8 @@ export default defineEventHandler(async (event) => {
         transactions,
         budgets,
         recurringTransactions: recurring,
+        savingsGoals,
+        debts,
       }
     }
 
