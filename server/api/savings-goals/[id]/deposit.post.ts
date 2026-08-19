@@ -71,13 +71,13 @@ export default defineEventHandler(async (event) => {
   })
 
   const newAmount = Number(updatedGoal.currentAmount)
-  const target = Number(updatedGoal.targetAmount)
-  const pct = Math.min(100, Math.round((newAmount / target) * 100))
+  const targetAmount = Number(updatedGoal.targetAmount)
+  const pct = Math.min(100, Math.round((newAmount / targetAmount) * 100))
 
   return {
     ok: true,
     message: action === 'DEPOSIT'
-      ? (newAmount >= target ? '🎉 Selamat! Target tabungan Anda telah tercapai 100%!' : 'Setoran tabungan berhasil ditambahkan! 💰')
+      ? (newAmount >= targetAmount ? '🎉 Selamat! Target tabungan Anda telah tercapai 100%!' : 'Setoran tabungan berhasil ditambahkan! 💰')
       : 'Penarikan saldo tabungan berhasil dilakukan.',
     data: {
       id: updatedGoal.id,
