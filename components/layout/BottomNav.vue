@@ -168,8 +168,8 @@ const onFabClick = () => {
             "
             :class="[
               fabPressed ? 'scale-90' : 'scale-100 hover:scale-105 active:scale-90',
+              'bg-gradient-to-tr from-primary-600 to-primary-400 shadow-primary-500/30'
             ]"
-            style="background-image: linear-gradient(135deg, #10b981 0%, #0d9488 100%);"
             aria-label="Tambah transaksi"
             @click="onFabClick"
           >
