@@ -4,18 +4,25 @@ import { ref } from 'vue';
 
 useHead({ title: "Pengaturan Notifikasi — CashPlow" });
 const router = useRouter();
-const { isSupported, isEnabled, subscribe, unsubscribe, loading: pushLoading } = usePush();
+const { isSupported, isEnabled, permissionState, subscribe, unsubscribe, sendTestNotification, loading: pushLoading } = usePush();
 
-// Local preference toggles
-const budgetAlertEnabled = ref(true);
-const recurringReminderEnabled = ref(true);
-const weeklyReportEnabled = ref(false);
+const testNotificationSent = ref(false);
 
 const handleTogglePush = async () => {
     if (isEnabled.value) {
         await unsubscribe();
     } else {
         await subscribe();
+    }
+};
+
+const handleTestNotification = async () => {
+    const success = await sendTestNotification();
+    if (success) {
+        testNotificationSent.value = true;
+        setTimeout(() => {
+            testNotificationSent.value = false;
+        }, 3500);
     }
 };
 </script>
@@ -74,17 +81,17 @@ const handleTogglePush = async () => {
                         <div class="space-y-5">
                             <!-- ── 1. Main Web Push Toggle ────────────────────── -->
                             <div
-                                class="p-5 rounded-2xl border-2 transition-all"
+                                class="p-5 rounded-2xl border-2 transition-all space-y-3"
                                 :class="isEnabled ? 'border-primary-200 bg-primary-50/20 dark:border-primary-900/40 dark:bg-primary-950/20' : 'border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-surface-800/50'"
                             >
-                                <div class="flex items-center justify-between mb-2.5">
+                                <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-3">
                                         <div class="w-11 h-11 rounded-2xl bg-white dark:bg-gray-800 flex items-center justify-center text-2xl shadow-xs">
                                             {{ isEnabled ? '🔔' : '🔕' }}
                                         </div>
                                         <div>
                                             <h3 class="text-sm font-bold text-gray-800 dark:text-gray-100">
-                                                Notifikasi Push Web (PWA)
+                                                Notifikasi Perangkat (PWA)
                                             </h3>
                                             <p class="text-[11px] text-gray-400">
                                                 {{ isEnabled ? 'Aktif di perangkat ini' : 'Nonaktif di perangkat ini' }}
@@ -115,11 +122,39 @@ const handleTogglePush = async () => {
                                     }}
                                 </p>
 
-                                <div v-if="!isSupported" class="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-[11px] text-amber-700 dark:text-amber-400">
-                                    ⚠️ Browser Anda saat ini belum mendukung Web Push Notifications. Coba buka melalui Chrome / Edge / install sebagai PWA.
+                                <!-- Test Notification Button -->
+                                <div v-if="isEnabled" class="pt-1">
+                                    <button
+                                        type="button"
+                                        class="w-full py-2.5 px-4 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/80 text-xs font-bold text-primary-600 dark:text-primary-400 flex items-center justify-center gap-2 shadow-xs transition-all active:scale-98"
+                                        @click="handleTestNotification"
+                                    >
+                                        <span>🔔</span>
+                                        <span>Kirim Notifikasi Uji Coba ke HP</span>
+                                    </button>
                                 </div>
 
-                                <p v-if="pushLoading" class="text-[10px] text-primary-500 font-bold mt-2 animate-pulse">
+                                <!-- Test Sent Feedback -->
+                                <div
+                                    v-if="testNotificationSent"
+                                    class="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 text-center animate-fade-in"
+                                >
+                                    ✓ Notifikasi uji coba telah dikirim ke layar HP Anda!
+                                </div>
+
+                                <!-- Denied Warning -->
+                                <div v-if="permissionState === 'denied'" class="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-600 dark:text-rose-400 space-y-1">
+                                    <p class="font-bold">⚠️ Izin Notifikasi Diblokir di Browser</p>
+                                    <p class="text-[11px] leading-relaxed text-rose-500/90">
+                                        Untuk mengaktifkan: Klik ikon gembok / pengaturan situs di sebelah URL browser HP Anda, lalu ubah status <strong>Notifikasi</strong> menjadi <strong>Izinkan (Allow)</strong>.
+                                    </p>
+                                </div>
+
+                                <div v-if="!isSupported" class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-[11px] text-amber-700 dark:text-amber-400">
+                                    ⚠️ Browser Anda saat ini belum mendukung Web Push Notifications. Coba buka melalui Chrome / Edge / install sebagai PWA di Home Screen.
+                                </div>
+
+                                <p v-if="pushLoading" class="text-[10px] text-primary-500 font-bold animate-pulse">
                                     ⏳ Memproses izin notifikasi...
                                 </p>
                             </div>
