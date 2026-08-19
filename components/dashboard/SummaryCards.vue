@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // ── Currency ────────────────────────────────────────────────────
-const { formatCompact } = useCurrency()
+const { formatCompact, maskBalance } = useCurrency()
 
 // ── Computed change labels ─────────────────────────────────────
 const incomeChangeLabel = computed(() => {
@@ -113,7 +113,7 @@ const savingsAmount = computed(() => props.income - props.expense)
             leading-tight mb-2
           "
         >
-          {{ formatCompact(income) }}
+          {{ maskBalance(formatCompact(income)) }}
         </p>
 
         <!-- Change indicator -->
@@ -185,7 +185,7 @@ const savingsAmount = computed(() => props.income - props.expense)
             leading-tight mb-2
           "
         >
-          {{ formatCompact(expense) }}
+          {{ maskBalance(formatCompact(expense)) }}
         </p>
 
         <!-- Change indicator — for expense, down = good (green) -->
@@ -236,7 +236,7 @@ const savingsAmount = computed(() => props.income - props.expense)
                 : 'text-rose-500 dark:text-rose-400'
             "
           >
-            {{ formatCompact(Math.abs(savingsAmount)) }}
+            {{ maskBalance(formatCompact(Math.abs(savingsAmount))) }}
           </span>
           <span
             class="

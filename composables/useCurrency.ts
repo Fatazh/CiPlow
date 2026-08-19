@@ -180,11 +180,11 @@ export const useCurrency = () => {
         bg: "bg-amber-50 dark:bg-amber-950/30",
       };
     }
-    return {
-      bar: "bg-emerald-500",
-      text: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-50 dark:bg-emerald-950/30",
-    };
+  /**
+   * Mask balance if global privacy mode is enabled
+   */
+  const maskBalance = (formattedValue: string): string => {
+    return userStore.isBalanceHidden ? "••••••••" : formattedValue;
   };
 
   return {
@@ -197,5 +197,8 @@ export const useCurrency = () => {
     formatPercent,
     formatBudgetProgress,
     getBudgetColor,
+    isBalanceHidden: computed(() => userStore.isBalanceHidden),
+    toggleBalanceHidden: userStore.toggleBalanceHidden,
+    maskBalance,
   };
 };

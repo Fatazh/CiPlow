@@ -242,6 +242,9 @@ const fallbackSummary = {
             :loading="catLoading && !catData"
         />
 
+        <!-- ── AI Financial Advisor (Gemini) ──────────────────────── -->
+        <AiAdvisorCard />
+
         <!-- ── Insights Card ─────────────────────────────────────── -->
         <InsightsCard
             :trend-summary="trendData?.summary ?? null"

@@ -27,6 +27,7 @@ model User {
   debts                 Debt[]
   transactions          Transaction[]
   wallets               Wallet[]
+  feedbacks             Feedback[]
 
   @@map("users")
 }
@@ -253,6 +254,21 @@ model DebtPayment {
 
   @@index([debtId])
   @@map("debt_payments")
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  type      String   // "RATING" | "BUG_REPORT" | "FEEDBACK"
+  rating    Int?     // 1 - 5
+  category  String?  // Kategori kendala / UI / Fitur
+  message   String
+  metadata  Json?    // Info peramban/sistem
+  createdAt DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("feedbacks")
 }
 
 enum DebtType {
