@@ -21,6 +21,9 @@ export default defineEventHandler(async (event) => {
     if (!file || !file.filename?.endsWith('.json')) {
       throw createError({ statusCode: 400, message: 'Format file cadangan harus .json' })
     }
+    if (file.data.length > 10 * 1024 * 1024) {
+      throw createError({ statusCode: 413, message: 'Ukuran berkas cadangan maksimal adalah 10 MB' })
+    }
     try {
       backupData = JSON.parse(file.data.toString('utf-8'))
     } catch {

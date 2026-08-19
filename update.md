@@ -40,10 +40,16 @@ Dokumen ini memuat catatan perbaikan terbaru, analisis celah bug & keamanan, bag
 
 ## 🚨 2. Analisis Keamanan & Keandalan yang Telah Diterapkan
 
-1. **Session Hijacking & Protection**: Cookie HTTP-only dengan `SameSite=strict` dan `Secure` flag di lingkungan produksi.
-2. **Validasi Saldo Transaksi Atomic**: Pengecekan saldo sebelum mutasi transaksi `PUT` dan `POST`.
-3. **Cron Worker Idempotent**: Proteksi `FOR UPDATE SKIP LOCKED` pada proses transaksi berulang terjadwal.
-4. **Rate Limiting**: Pencegahan brute-force pada endpoint autentikasi dan lupa password.
+1. **Pencegahan Cross-Tenant Category Leakage**: Memfilter `where: { userId: user.id }` pada [server/api/ai/scan-receipt.post.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/server/api/ai/scan-receipt.post.ts) agar nama kategori pengguna lain tidak bocor ke prompt AI.
+2. **Validasi Kepemilikan Dompet Transaksi Berulang**: Memverifikasi kepemilikan `walletFromId` dan `walletToId` di [server/api/recurring-transactions/index.post.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/server/api/recurring-transactions/index.post.ts) dan `[id].put.ts` untuk mencegah eksploitasi IDOR debit saldo dompet orang lain.
+3. **Pencegahan Eksploitasi Saldo Penarikan Tabungan**: Memvalidasi bahwa nominal `WITHDRAW` tidak boleh melebihi `currentAmount` tabungan di [server/api/savings-goals/[id]/deposit.post.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/server/api/savings-goals/%5Bid%5D/deposit.post.ts).
+4. **Pencegahan Host Header Injection**: Memvalidasi origin domain resmi pada alur pembuatan tautan reset password di [server/api/auth/forgot-password.post.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/server/api/auth/forgot-password.post.ts).
+5. **Perbaikan Date Overflow Cron Transaksi Bulanan**: Algoritma `advanceRecurringDate` di [server/api/cron/process-recurring.post.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/server/api/cron/process-recurring.post.ts) mencegah tanggal 31 melompat ke bulan berikutnya secara permanen.
+6. **Integritas Nilai Hutang & Piutang**: Mencegah sisa tagihan negatif saat mengedit `totalAmount` atau memasukkan `initialPaid` di [server/api/debts/](file:///c:/Users/2080/Documents/apps/cob/CiPlow/server/api/debts/).
+7. **Pengecekan Saldo Atomic di Database Transaction**: Mencegah *race condition (TOCTOU)* saldo minus saat request mutasi dikirim simultan di [server/api/transactions/index.post.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/server/api/transactions/index.post.ts).
+8. **Pembatasan Ukuran File Unggahan (DoS Protection)**: Membatasi ukuran file maksimal (5MB–10MB) pada endpoint impor Excel, restore JSON, dan foto struk AI.
+9. **Pembersihan Otomatis Sesi Kedaluwarsa**: Cron worker memanggil `cleanupExpiredSessions()` secara berkala.
+10. **Rate Limiting Komprehensif**: Pembatasan frekuensi request pada endpoint autentikasi, AI scanner, AI advisor, dan feedback.
 
 ---
 

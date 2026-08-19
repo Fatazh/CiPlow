@@ -62,6 +62,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Kategori tidak ditemukan' })
   }
 
+  // Verify wallet ownership
+  if (body.walletFromId) {
+    const wFrom = await prisma.wallet.findFirst({ where: { id: body.walletFromId, userId: user.id } })
+    if (!wFrom) throw createError({ statusCode: 404, message: 'Dompet sumber tidak ditemukan' })
+  }
+  if (body.walletToId) {
+    const wTo = await prisma.wallet.findFirst({ where: { id: body.walletToId, userId: user.id } })
+    if (!wTo) throw createError({ statusCode: 404, message: 'Dompet tujuan tidak ditemukan' })
+  }
+
   if (body.type === 'INCOME' && category.type !== 'INCOME') {
     throw createError({ statusCode: 400, message: 'Transaksi pemasukan harus menggunakan kategori bertipe Pemasukan' })
   }

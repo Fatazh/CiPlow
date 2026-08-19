@@ -14,6 +14,7 @@ export default defineNuxtConfig({
 
   csurf: {
     methodsToProtect: ['POST', 'PUT', 'PATCH', 'DELETE'],
+    excludedUrls: ['/api/cron/.*'],
   },
 
   components: [

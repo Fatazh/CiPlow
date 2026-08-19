@@ -2,7 +2,33 @@ import prisma from '~/server/utils/prisma'
 import { updateBudgetSpent } from '~/server/utils/budget'
 import { adjustWalletBalance } from '~/server/utils/wallet'
 import { getExchangeRate } from '~/server/utils/exchange'
+import { cleanupExpiredSessions } from '~/server/utils/auth'
 import { timingSafeEqual } from 'crypto'
+
+function advanceRecurringDate(currentDate: Date, originalStartDate: Date, interval: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'): Date {
+  const next = new Date(currentDate)
+  if (interval === 'DAILY') {
+    next.setDate(next.getDate() + 1)
+  } else if (interval === 'WEEKLY') {
+    next.setDate(next.getDate() + 7)
+  } else if (interval === 'MONTHLY') {
+    const origDay = originalStartDate.getDate()
+    const targetMonth = next.getMonth() + 1
+    const targetYear = next.getFullYear() + Math.floor(targetMonth / 12)
+    const normalizedMonth = targetMonth % 12
+    const daysInTargetMonth = new Date(targetYear, normalizedMonth + 1, 0).getDate()
+    const safeDay = Math.min(origDay, daysInTargetMonth)
+    next.setFullYear(targetYear, normalizedMonth, safeDay)
+  } else if (interval === 'YEARLY') {
+    const origDay = originalStartDate.getDate()
+    const origMonth = originalStartDate.getMonth()
+    const targetYear = next.getFullYear() + 1
+    const daysInTargetMonth = new Date(targetYear, origMonth + 1, 0).getDate()
+    const safeDay = Math.min(origDay, daysInTargetMonth)
+    next.setFullYear(targetYear, origMonth, safeDay)
+  }
+  return next
+}
 
 function isValidCronSecret(expected: string, provided?: string) {
   if (!provided) {
@@ -151,16 +177,8 @@ export default defineEventHandler(async (event) => {
           await updateBudgetSpent(tx, recurring.userId, recurring.categoryId, new Date(currentProcessDate), amountNum)
         }
 
-        // 4. Advance the date for next occurrence
-        if (recurring.interval === 'DAILY') {
-          currentProcessDate.setDate(currentProcessDate.getDate() + 1)
-        } else if (recurring.interval === 'WEEKLY') {
-          currentProcessDate.setDate(currentProcessDate.getDate() + 7)
-        } else if (recurring.interval === 'MONTHLY') {
-          currentProcessDate.setMonth(currentProcessDate.getMonth() + 1)
-        } else if (recurring.interval === 'YEARLY') {
-          currentProcessDate.setFullYear(currentProcessDate.getFullYear() + 1)
-        }
+        // 4. Advance the date safely for next occurrence
+        currentProcessDate = advanceRecurringDate(currentProcessDate, recurring.startDate, recurring.interval)
         
         occurrencesCount++
       }
@@ -186,6 +204,8 @@ export default defineEventHandler(async (event) => {
     totalProcessed += processedCount
   }
 
+  // Periodic cleanup of expired sessions to keep database lean
+  await cleanupExpiredSessions().catch((err) => console.error('[Session Cleanup Error]', err))
+
   return { ok: true, processedTransactions: totalProcessed }
 })
-

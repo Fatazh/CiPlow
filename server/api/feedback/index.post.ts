@@ -1,9 +1,7 @@
-// server/api/feedback/index.post.ts
-// Handle user feedback, app rating, and bug reports
-
 import { z } from 'zod'
 import prisma from '~/server/utils/prisma'
 import { getUserFromSession } from '~/server/utils/auth'
+import { assertRateLimit } from '~/server/utils/rate-limit'
 
 const feedbackSchema = z.object({
   type: z.enum(['RATING', 'BUG_REPORT', 'FEEDBACK']),
@@ -14,6 +12,13 @@ const feedbackSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  assertRateLimit(event, {
+    key: 'feedback-submit',
+    max: 10,
+    windowMs: 60 * 1000,
+    message: 'Terlalu banyak permintaan. Silakan tunggu sebentar sebelum mengirim kembali.',
+  })
+
   const user = await getUserFromSession(event)
 
   const result = await readValidatedBody(event, (body) => feedbackSchema.safeParse(body))

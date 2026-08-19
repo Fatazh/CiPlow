@@ -1,12 +1,17 @@
-// server/api/ai/scan-receipt.post.ts
-// AI Receipt Scanner using Google Gemini Flash Vision API
-
 import { GoogleGenAI } from '@google/genai'
 import { requireAuth } from '~/server/utils/auth'
 import prisma from '~/server/utils/prisma'
+import { assertRateLimit } from '~/server/utils/rate-limit'
 
 export default defineEventHandler(async (event) => {
-  await requireAuth(event)
+  const user = await requireAuth(event)
+
+  assertRateLimit(event, {
+    key: 'ai-scan-receipt',
+    max: 15,
+    windowMs: 60 * 1000,
+    message: 'Terlalu banyak permintaan scan struk. Coba beberapa saat lagi.',
+  })
 
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
@@ -24,6 +29,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // File size validation (max ~5MB base64)
+  if (typeof body.image === 'string' && body.image.length > 7 * 1024 * 1024) {
+    throw createError({
+      statusCode: 413,
+      message: 'Ukuran berkas foto terlalu besar (maksimal 5 MB)',
+    })
+  }
+
   // Extract base64 data and mimeType
   // data:image/jpeg;base64,... or raw base64
   let mimeType = 'image/jpeg'
@@ -35,8 +48,9 @@ export default defineEventHandler(async (event) => {
     base64Data = parts[1]
   }
 
-  // Fetch available categories for better category suggestion matching
+  // Fetch available categories for this authenticated user only (prevent cross-tenant leak)
   const categories = await prisma.category.findMany({
+    where: { userId: user.id },
     select: { id: true, name: true, type: true }
   })
   const categoryNames = categories.map((c) => `${c.name} (${c.type})`).join(', ')

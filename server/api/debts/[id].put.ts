@@ -29,8 +29,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const data = result.data
-  const total = data.totalAmount ?? Number(existing.totalAmount)
   const paid = Number(existing.paidAmount)
+
+  if (data.totalAmount !== undefined && data.totalAmount < paid) {
+    throw createError({
+      statusCode: 400,
+      message: `Total tagihan (${data.totalAmount}) tidak boleh lebih kecil dari jumlah yang sudah dibayar (${paid})`,
+    })
+  }
+
+  const total = data.totalAmount ?? Number(existing.totalAmount)
   const status = paid >= total ? 'PAID' : (paid > 0 ? 'PARTIAL' : 'UNPAID')
 
   const updated = await prisma.debt.update({

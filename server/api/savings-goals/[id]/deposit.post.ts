@@ -30,6 +30,16 @@ export default defineEventHandler(async (event) => {
 
   const { amount, action, walletId } = result.data
 
+  const current = Number(goal.currentAmount)
+  const target = Number(goal.targetAmount)
+
+  if (action === 'WITHDRAW' && amount > current) {
+    throw createError({
+      statusCode: 400,
+      message: `Nominal penarikan (${amount}) melebihi saldo tabungan saat ini (${current})`,
+    })
+  }
+
   const updatedGoal = await prisma.$transaction(async (tx) => {
     let wallet = null
     if (walletId) {
@@ -48,9 +58,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const current = Number(goal.currentAmount)
-    const target = Number(goal.targetAmount)
-    const newCurrent = action === 'DEPOSIT' ? current + amount : Math.max(0, current - amount)
+    const newCurrent = action === 'DEPOSIT' ? current + amount : current - amount
     const isCompleted = newCurrent >= target
 
     return tx.savingsGoal.update({
@@ -63,13 +71,13 @@ export default defineEventHandler(async (event) => {
   })
 
   const newAmount = Number(updatedGoal.currentAmount)
-  const target = Number(updatedGoal.targetAmount)
-  const pct = Math.min(100, Math.round((newAmount / target) * 100))
+  const targetAmount = Number(updatedGoal.targetAmount)
+  const pct = Math.min(100, Math.round((newAmount / targetAmount) * 100))
 
   return {
     ok: true,
     message: action === 'DEPOSIT'
-      ? (newAmount >= target ? '🎉 Selamat! Target tabungan Anda telah tercapai 100%!' : 'Setoran tabungan berhasil ditambahkan! 💰')
+      ? (newAmount >= targetAmount ? '🎉 Selamat! Target tabungan Anda telah tercapai 100%!' : 'Setoran tabungan berhasil ditambahkan! 💰')
       : 'Penarikan saldo tabungan berhasil dilakukan.',
     data: {
       id: updatedGoal.id,

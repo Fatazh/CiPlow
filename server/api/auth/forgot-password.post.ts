@@ -48,11 +48,17 @@ export default defineEventHandler(async (event) => {
   })
 
   // 4. Send real email via Nodemailer
-  // Detect origin from request headers or environment
-  const requestHost = getHeader(event, 'host')
-  const protocol = getHeader(event, 'x-forwarded-proto') || 'http'
-  const appBaseUrl = process.env.APP_URL || (requestHost ? `${protocol}://${requestHost}` : 'http://localhost:3000')
-  const resetUrl = `${appBaseUrl}/reset-password?token=${token}`
+  // Safely determine base URL, preventing Host Header Injection
+  let appBaseUrl = process.env.APP_URL
+  if (!appBaseUrl) {
+    const rawHost = getHeader(event, 'host') || 'localhost:3000'
+    // Validate host format (domain, optional port, alphanumeric and hyphens only)
+    const isValidHost = /^([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+(:[0-9]+)?$/.test(rawHost)
+    const host = isValidHost ? rawHost : 'localhost:3000'
+    const protocol = getHeader(event, 'x-forwarded-proto') === 'https' || process.env.NODE_ENV === 'production' ? 'https' : 'http'
+    appBaseUrl = `${protocol}://${host}`
+  }
+  const resetUrl = `${appBaseUrl.replace(/\/$/, '')}/reset-password?token=${token}`
 
   try {
     await sendResetPasswordEmail({

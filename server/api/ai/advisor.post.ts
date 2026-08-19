@@ -1,10 +1,8 @@
-// server/api/ai/advisor.post.ts
-// AI Financial Advisor powered by Google Gemini
-
 import { GoogleGenAI } from '@google/genai'
 import { z } from 'zod'
 import prisma from '~/server/utils/prisma'
 import { requireAuth } from '~/server/utils/auth'
+import { assertRateLimit } from '~/server/utils/rate-limit'
 
 const advisorQuerySchema = z.object({
   topic: z.enum(['OVERVIEW', 'EXPENSE_OPTIMIZATION', 'SAVINGS_STRATEGY', 'DEBT_MANAGEMENT']).default('OVERVIEW'),
@@ -13,6 +11,13 @@ const advisorQuerySchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const user = await requireAuth(event)
+
+  assertRateLimit(event, {
+    key: 'ai-advisor',
+    max: 20,
+    windowMs: 60 * 1000,
+    message: 'Terlalu banyak permintaan ke Asisten AI. Silakan tunggu sejenak.',
+  })
 
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
