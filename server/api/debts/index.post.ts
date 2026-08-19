@@ -27,7 +27,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { type, personName, totalAmount, initialPaid, dueDate, notes, walletId } = result.data
+  const { type, personName, totalAmount, initialPaid = 0, dueDate, notes, walletId } = result.data
+
+  if (initialPaid > totalAmount) {
+    throw createError({
+      statusCode: 400,
+      message: `Pembayaran awal (${initialPaid}) tidak boleh melebihi total tagihan (${totalAmount})`,
+    })
+  }
 
   const status = initialPaid >= totalAmount ? 'PAID' : (initialPaid > 0 ? 'PARTIAL' : 'UNPAID')
 

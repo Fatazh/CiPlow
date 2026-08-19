@@ -164,6 +164,17 @@ export default defineEventHandler(async (event) => {
       budgetAlert = await updateBudgetSpent(tx, user.id, body.categoryId, txDate, amount)
     }
 
+    // Atomically verify walletFrom has enough balance inside the transaction
+    if (body.walletFromId && (body.type === 'EXPENSE' || body.type === 'TRANSFER')) {
+      const freshWallet = await tx.wallet.findUnique({ where: { id: body.walletFromId } })
+      if (freshWallet && Number(freshWallet.balance) < amount) {
+        throw createError({
+          statusCode: 400,
+          message: `Saldo di dompet ${freshWallet.name} tidak mencukupi (${Number(freshWallet.balance)})`
+        })
+      }
+    }
+
     if (body.walletFromId) {
       // Money LEAVING the wallet
       await adjustWalletBalance(tx, body.walletFromId, -amount)

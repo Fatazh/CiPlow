@@ -20,6 +20,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Format file harus .xlsx' })
   }
 
+  // File size validation (max 5MB)
+  if (file.data.length > 5 * 1024 * 1024) {
+    throw createError({ statusCode: 413, message: 'Ukuran file Excel maksimal adalah 5 MB' })
+  }
+
   const workbook = new ExcelJS.Workbook()
   await workbook.xlsx.load(file.data as any)
   const worksheet = workbook.getWorksheet(1)
