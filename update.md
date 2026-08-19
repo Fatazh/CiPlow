@@ -4,7 +4,40 @@ Dokumen ini memuat catatan perbaikan terbaru, analisis celah bug & keamanan, bag
 
 ---
 
-## 🛠️ 1. Catatan Perbaikan & Fitur Terbaru (Rilis Versi 1.2.3)
+## 🎨 1. Catatan Fitur Baru & Perubahan (Rilis Versi 1.2.4)
+
+### A. Tema Warna Kustom (Accent Theme Engine)
+- **Token Variabel CSS Dinamis:** Tailwind CSS `primary` dikonfigurasi dinamis mengarah ke CSS variables di [tailwind.config.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/tailwind.config.ts) & [assets/css/main.css](file:///c:/Users/2080/Documents/apps/cob/CiPlow/assets/css/main.css).
+- **5 Pilihan Aksen:** *Emerald (Default)*, *Ocean Blue*, *Violet Luxury*, *Amber Gold*, dan *Rose Passion*.
+- **Manajemen State:** Dikelola di Pinia Store [stores/user.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/stores/user.ts) dengan persistensi `localStorage` dan pemilih tema visual di [pages/profile/index.vue](file:///c:/Users/2080/Documents/apps/cob/CiPlow/pages/profile/index.vue).
+
+### B. Kalender Finansial Interaktif (*Interactive Financial Calendar*)
+- **Komponen Visual:** [components/transactions/TransactionCalendarView.vue](file:///c:/Users/2080/Documents/apps/cob/CiPlow/components/transactions/TransactionCalendarView.vue) menampilkan matriks tanggal bulanan lengkap dengan ringkasan pemasukan hijau dan pengeluaran merah per hari.
+- **Navigasi Cepat:** Switcher `[📑 Daftar Transaksi | 📅 Kalender Keuangan]` di [pages/transactions.vue](file:///c:/Users/2080/Documents/apps/cob/CiPlow/pages/transactions.vue) serta pop-up kartu detail riwayat transaksi saat suatu tanggal diklik.
+
+### C. Sistem Label / Tagging Kustom Transaksi (`#tags`)
+- **Skema Database:** Kolom `tags String[] @default([])` pada model `Transaction` di Prisma schema.
+- **Input Chips:** Kemudahan menambah/menghapus tag fleksibel (misal: `#Liburan`, `#Kuliner`, `#Project`) di [pages/add-transaction.vue](file:///c:/Users/2080/Documents/apps/cob/CiPlow/pages/add-transaction.vue) dan [pages/edit-transaction/[id].vue](file:///c:/Users/2080/Documents/apps/cob/CiPlow/pages/edit-transaction/%5Bid%5D.vue).
+- **Filter Cepat:** Dropdown filter tag di riwayat transaksi untuk analisis pengeluaran berbasis label khusus.
+
+### D. Lampiran Foto Struk Manual & Penampil Gambar Resolusi Penuh (*Receipt Viewer*)
+- **Database & Penyimpanan:** Kolom `receiptImage String?` menyimpan Data URL foto struk/bukti bayar terkompresi.
+- **Komponen Viewer:** [components/transactions/ReceiptModal.vue](file:///c:/Users/2080/Documents/apps/cob/CiPlow/components/transactions/ReceiptModal.vue) dengan fitur zoom, unduh berkas, dan pratinjau resolusi tinggi.
+- **Integrasi UI:** Tombol lampiran kamera/file di form transaksi dan badge `🧾 Lihat Struk` di kartu daftar transaksi.
+
+### E. Pintasan Cepat Mobile PWA (*App Shortcuts*)
+- **PWA Manifest:** Konfigurasi 4 pintasan aplikasi di [nuxt.config.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/nuxt.config.ts) (*Catat Pengeluaran*, *Catat Pemasukan*, *Scan Struk AI*, *Hutang & Piutang*) saat menahan ikon aplikasi di layar ponsel.
+
+### F. Kartu Rekap Finansial Bulanan & Fitur Bagikan (*Shareable Monthly Recap*)
+- **Komponen:** [components/analytics/MonthlyRecapCard.vue](file:///c:/Users/2080/Documents/apps/cob/CiPlow/components/analytics/MonthlyRecapCard.vue) di halaman Analitik merangkum total pemasukan, total pengeluaran, nominal tabungan bersih, rasio tabungan, kategori terbesar, dan hari aktif mencatat.
+- **Fitur Bagikan:** Mendukung `navigator.share()` bawaan ponsel dan fallback salin teks otomatis ke clipboard.
+
+### G. Filter Rentang Tanggal Cepat
+- **Opsi Rentang:** Pilihan tombol filter *Bulanan*, *7 Hari Terakhir*, *30 Hari Terakhir*, dan *Rentang Kustom* dengan tanggal Mulai & Sampai di riwayat transaksi.
+
+---
+
+## 🛠️ 2. Catatan Rilis Versi 1.2.3 (Sebelumnya)
 
 ### A. CRUD Penuh & Kontrol Transaksi Berulang (*Recurring Transactions*)
 - **Fitur Baru:** Menambahkan endpoint `PUT`, `DELETE`, dan `PATCH (toggle pause/resume)` pada `/api/recurring-transactions/`.
@@ -33,12 +66,9 @@ Dokumen ini memuat catatan perbaikan terbaru, analisis celah bug & keamanan, bag
 - **Database:** Model `Feedback` di Prisma schema untuk menyimpan rating bintang 1–5 dan laporan bug.
 - **Frontend:** Komponen [components/ui/FeedbackModal.vue](file:///c:/Users/2080/Documents/apps/cob/CiPlow/components/ui/FeedbackModal.vue) menggantikan pesan *placeholder* pada menu profil.
 
-### H. Penampil Catatan Rilis (*In-App Changelog Viewer*)
-- **Frontend:** Halaman [pages/profile/about.vue](file:///c:/Users/2080/Documents/apps/cob/CiPlow/pages/profile/about.vue) menampilkan versi 1.2.3 dan tab riwayat rilis interaktif.
-
 ---
 
-## 🚨 2. Analisis Keamanan & Keandalan yang Telah Diterapkan
+## 🚨 3. Analisis Keamanan & Keandalan yang Telah Diterapkan
 
 1. **Pencegahan Cross-Tenant Category Leakage**: Memfilter `where: { userId: user.id }` pada [server/api/ai/scan-receipt.post.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/server/api/ai/scan-receipt.post.ts) agar nama kategori pengguna lain tidak bocor ke prompt AI.
 2. **Validasi Kepemilikan Dompet Transaksi Berulang**: Memverifikasi kepemilikan `walletFromId` dan `walletToId` di [server/api/recurring-transactions/index.post.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/server/api/recurring-transactions/index.post.ts) dan `[id].put.ts` untuk mencegah eksploitasi IDOR debit saldo dompet orang lain.
@@ -47,28 +77,27 @@ Dokumen ini memuat catatan perbaikan terbaru, analisis celah bug & keamanan, bag
 5. **Perbaikan Date Overflow Cron Transaksi Bulanan**: Algoritma `advanceRecurringDate` di [server/api/cron/process-recurring.post.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/server/api/cron/process-recurring.post.ts) mencegah tanggal 31 melompat ke bulan berikutnya secara permanen.
 6. **Integritas Nilai Hutang & Piutang**: Mencegah sisa tagihan negatif saat mengedit `totalAmount` atau memasukkan `initialPaid` di [server/api/debts/](file:///c:/Users/2080/Documents/apps/cob/CiPlow/server/api/debts/).
 7. **Pengecekan Saldo Atomic di Database Transaction**: Mencegah *race condition (TOCTOU)* saldo minus saat request mutasi dikirim simultan di [server/api/transactions/index.post.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/server/api/transactions/index.post.ts).
-8. **Pembatasan Ukuran File Unggahan (DoS Protection)**: Membatasi ukuran file maksimal (5MB–10MB) pada endpoint impor Excel, restore JSON, dan foto struk AI.
+8. **Pembatasan Ukuran File Unggahan (DoS Protection)**: Membatasi ukuran file maksimal (5MB–10MB) pada endpoint impor Excel, restore JSON, foto struk AI, dan lampiran struk manual.
 9. **Pembersihan Otomatis Sesi Kedaluwarsa**: Cron worker memanggil `cleanupExpiredSessions()` secara berkala.
 10. **Rate Limiting Komprehensif**: Pembatasan frekuensi request pada endpoint autentikasi, AI scanner, AI advisor, dan feedback.
 
 ---
 
-## 🚀 3. Roadmap & Rencana Pengembangan Masa Depan (v1.3.0+)
+## 🚀 4. Roadmap & Rencana Pengembangan Masa Depan (v1.3.0+)
 
-### 📌 Fase 4 (Selesai di v1.2.3)
-- [x] CRUD Transaksi Berulang & Kontrol Pause/Resume.
-- [x] Asisten Finansial Pintar AI (Gemini Pro).
-- [x] Mode Privasi Saldo Global.
-- [x] Pemulihan Cadangan Penuh (JSON Restore).
-- [x] WhatsApp Reminder & Riwayat Cicilan Hutang/Piutang.
-- [x] Proyeksi Target Tabungan.
-- [x] Modal Umpan Balik / Lapor Bug.
-- [x] Versi 1.2.3 & In-App Changelog Viewer.
+### 📌 Telah Selesai di v1.2.4
+- [x] Tema Warna Kustom (Emerald, Ocean, Violet, Amber, Rose).
+- [x] Kalender Finansial Interaktif & View Switcher.
+- [x] Sistem Label / Tag Transaksi (#tags).
+- [x] Lampiran Foto Struk Manual & Viewer Resolusi Penuh.
+- [x] Pintasan Cepat Mobile PWA (App Shortcuts).
+- [x] Kartu Rekap Finansial Bulanan & Fitur Bagikan.
+- [x] Filter Rentang Tanggal Cepat (7 Hari, 30 Hari, Kustom).
 
-### 📌 Fase 5 (Rencana v1.3.0)
-- [ ] **Buku Kas Bersama / Multi-User Budget (Shared Family Budget)**: Kolaborasi pencatatan keuangan bersama pasangan atau anggota keluarga.
-- [ ] **Kustomisasi Tema Aksen Warna**: Pilihan tema warna aksen selain Emerald (Royal Blue, Violet, Amber, Rose).
-- [ ] **Widget iOS / Android PWA Shortcuts**: Aksi cepat catat pengeluaran langsung dari home screen.
+### 📌 Rencana v1.3.0
+- [ ] **Buku Kas Bersama / Multi-User Budget (Shared Family Budget)**: Kolaborasi pencatatan keuangan bersama pasangan atau anggota keluarga dengan hak akses peran (Owner, Editor, Viewer).
+- [ ] **Grafik Heatmap Pengeluaran Tahunan (GitHub-style Contribution Grid)**: Visualisasi intensitas pengeluaran 365 hari dalam setahun.
+- [ ] **Integrasi Web Push Notification**: Notifikasi tagihan jatuh tempo dan peringatan batas anggaran langsung ke browser/device tanpa membuka aplikasi.
 
 ---
 

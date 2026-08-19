@@ -64,6 +64,23 @@ const stats = computed(() => [
     { label: "Budget", value: userDisplay.value.stats.budgets, icon: "🎯" },
 ]);
 
+const userStore = useUserStore();
+
+// ── Accent Color Themes ────────────────────────────────────────
+const showThemeModal = ref(false);
+const accentThemes = [
+    { id: 'emerald', name: 'Emerald Green', hex: '#10b981', desc: 'Warna default CashPlow yang sejuk & profesional' },
+    { id: 'ocean', name: 'Ocean Blue', hex: '#0ea5e9', desc: 'Biru laut modern dan bersih' },
+    { id: 'violet', name: 'Royal Violet', hex: '#8b5cf6', desc: 'Ungu elegan dan artistik' },
+    { id: 'amber', name: 'Sunset Amber', hex: '#f59e0b', desc: 'Kuning keemasan hangat & berenergi' },
+    { id: 'rose', name: 'Rose Pink', hex: '#ec4899', desc: 'Merah muda cerah dan menawan' },
+] as const;
+
+const selectAccentTheme = (themeId: any) => {
+    userStore.setAccentTheme(themeId);
+    showThemeModal.value = false;
+};
+
 // ── Menu sections ──────────────────────────────────────────────
 const accountMenus = [
     {
@@ -71,6 +88,16 @@ const accountMenus = [
         label: "Edit Profil",
         desc: "Ubah nama & info akun",
         action: "edit-profile",
+        comingSoon: false,
+    },
+    {
+        icon: "🎨",
+        label: "Tema Warna Aksen",
+        desc: computed(() => {
+            const current = accentThemes.find(t => t.id === userStore.accentTheme);
+            return current ? current.name : "Emerald Green";
+        }),
+        action: "theme",
         comingSoon: false,
     },
     {
@@ -203,6 +230,8 @@ const handleAction = (action: string) => {
         ].includes(action)
     ) {
         router.push(`/profile/${action}`);
+    } else if (action === "theme") {
+        showThemeModal.value = true;
     } else if (action === "rate") {
         feedbackMode.value = "RATING";
         showFeedbackModal.value = true;
@@ -864,6 +893,77 @@ const handleAction = (action: string) => {
                             </div>
                         </div>
                     </Transition>
+                </div>
+            </Transition>
+        </Teleport>
+
+        <!-- Accent Theme Modal -->
+        <Teleport to="body">
+            <Transition
+                enter-active-class="transition duration-200 ease-out"
+                enter-from-class="opacity-0"
+                enter-to-class="opacity-100"
+                leave-active-class="transition duration-150 ease-in"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0"
+            >
+                <div
+                    v-if="showThemeModal"
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                    @click.self="showThemeModal = false"
+                >
+                    <div
+                        class="w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-6 shadow-2xl space-y-5 animate-scale-in"
+                    >
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-2xl bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-lg">
+                                    🎨
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-black text-gray-900 dark:text-white">Pilih Tema Warna Aksen</h3>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Warna utama untuk tombol & grafik</p>
+                                </div>
+                            </div>
+                            <button
+                                class="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
+                                @click="showThemeModal = false"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div class="space-y-2.5">
+                            <button
+                                v-for="theme in accentThemes"
+                                :key="theme.id"
+                                class="w-full p-3.5 rounded-2xl border flex items-center justify-between transition-all duration-150 text-left"
+                                :class="[
+                                    userStore.accentTheme === theme.id
+                                        ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/20 ring-2 ring-primary-500/30'
+                                        : 'border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/60'
+                                ]"
+                                @click="selectAccentTheme(theme.id)"
+                            >
+                                <div class="flex items-center gap-3.5">
+                                    <div
+                                        class="w-6 h-6 rounded-full shadow-inner flex items-center justify-center text-white text-xs font-bold"
+                                        :style="{ backgroundColor: theme.hex }"
+                                    >
+                                        <span v-if="userStore.accentTheme === theme.id">✓</span>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-bold text-gray-900 dark:text-white">{{ theme.name }}</div>
+                                        <div class="text-xs text-gray-400 dark:text-gray-500">{{ theme.desc }}</div>
+                                    </div>
+                                </div>
+                                <div
+                                    class="w-3.5 h-3.5 rounded-full border-2"
+                                    :class="userStore.accentTheme === theme.id ? 'border-primary-500 bg-primary-500' : 'border-gray-300 dark:border-slate-700'"
+                                />
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </Transition>
         </Teleport>

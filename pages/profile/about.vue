@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// pages/profile/about.vue — About App & In-App Changelog Viewer (v1.2.3)
+// pages/profile/about.vue — About App & In-App Changelog Viewer (v1.2.4)
 import { ref, onMounted } from 'vue';
 
 useHead({ title: "Tentang App & Catatan Rilis — CashPlow" });
@@ -23,9 +23,24 @@ const close = () => {
 
 const changelogs = [
     {
-        version: "v1.2.3",
+        version: "v1.2.4",
         date: "Agustus 2026",
         isLatest: true,
+        highlights: [
+            "🎨 **Tema Warna Kustom (Accent Theme Engine)**: Pilih dari 5 tema warna premium (Emerald, Ocean Blue, Violet Luxury, Amber Gold, Rose Passion) langsung dari profil.",
+            "📅 **Kalender Finansial Interaktif**: Kalender bulanan visual dengan indikator nominal harian, heatmap pengeluaran, dan filter per tanggal.",
+            "🏷️ **Sistem Label / Tag Kustom (#tags)**: Kelompokkan transaksi dengan tag fleksibel seperti #Liburan, #Hobi, #Keluarga beserta filter pencarian cepat.",
+            "🧾 **Lampiran Foto Struk Manual & Fullscreen Viewer**: Unggah struk kasir atau bukti transfer ke setiap transaksi lengkap dengan modal zoom resolusi penuh.",
+            "⚡ **PWA Mobile App Shortcuts**: Akses cepat langsung dari homescreen HP untuk Catat Pengeluaran, Catat Pemasukan, Scan Struk AI, dan Cek Hutang.",
+            "📊 **Kartu Rekap Bulanan & Fitur Bagikan**: Ringkasan performa finansial visual (pemasukan, pengeluaran, rasio tabungan) yang dapat disalin dan dibagikan.",
+            "📅 **Filter Rentang Tanggal Cepat**: Filter fleksibel (Bulanan, 7 Hari Terakhir, 30 Hari Terakhir, dan Rentang Kustom).",
+            "🛡️ **Peningkatan Keamanan & Ketahanan Server**: Audit menyeluruh IDOR, proteksi transaksi tabungan, sanitasi host header, dan penanganan tanggal otomatis.",
+        ]
+    },
+    {
+        version: "v1.2.3",
+        date: "Agustus 2026",
+        isLatest: false,
         highlights: [
             "🔄 **CRUD Penuh Transaksi Berulang**: Sekarang Anda dapat mengedit, menghapus, serta menjeda/mengaktifkan kembali jadwal transaksi rutin.",
             "✨ **Asisten Finansial AI (Gemini Pro)**: Dapatkan evaluasi kesehatan finansial, skor cashflow, dan rekomendasi penghematan personal di menu Analitik.",
@@ -154,7 +169,7 @@ const changelogs = [
                                     <p
                                         class="text-xs font-bold text-primary-600 dark:text-primary-400 mt-1 inline-flex items-center gap-1.5 px-3 py-1 bg-primary-50 dark:bg-primary-950/40 rounded-full"
                                     >
-                                        <span>Versi 1.2.3</span>
+                                        <span>Versi 1.2.4</span>
                                         <span>✨ Rilis Terbaru</span>
                                     </p>
                                 </div>

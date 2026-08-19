@@ -13,11 +13,14 @@ const query = getQuery(event) as {
     walletId?: string
     month?: string
     year?: string
+    startDate?: string
+    endDate?: string
+    tag?: string
     search?: string
   }
 
   const page = Math.max(1, parseInt(query.page ?? '1'))
-  const limit = Math.min(50, Math.max(1, parseInt(query.limit ?? '20')))
+  const limit = Math.min(100, Math.max(1, parseInt(query.limit ?? '20')))
   const skip = (page - 1) * limit
 
   // Build where clause
@@ -38,13 +41,22 @@ const query = getQuery(event) as {
     ]
   }
 
-  if (query.month && query.year) {
+  if (query.startDate && query.endDate) {
+    where.date = {
+      gte: new Date(query.startDate),
+      lte: new Date(query.endDate),
+    }
+  } else if (query.month && query.year) {
     const month = parseInt(query.month)
     const year = parseInt(query.year)
     where.date = {
       gte: new Date(year, month - 1, 1, 0, 0, 0, 0),
       lte: new Date(year, month, 0, 23, 59, 59, 999),
     }
+  }
+
+  if (query.tag?.trim()) {
+    where.tags = { has: query.tag.trim() }
   }
 
   if (query.search?.trim()) {
@@ -81,6 +93,8 @@ const query = getQuery(event) as {
       description: tx.description,
       notes: tx.notes,
       date: tx.date.toISOString(),
+      tags: (tx as any).tags || [],
+      receiptImage: (tx as any).receiptImage || null,
       category: {
         id: tx.category.id,
         name: tx.category.name,
