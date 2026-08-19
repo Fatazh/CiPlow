@@ -38,9 +38,6 @@ export const useUserStore = defineStore('user', () => {
       accentTheme.value = savedTheme
       applyAccentThemeClass(savedTheme)
     }
-
-    // Clean up any legacy PIN data
-    localStorage.removeItem('ciplow_app_pin')
   }
 
   const setAccentTheme = (theme: AccentTheme) => {

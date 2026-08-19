@@ -3,6 +3,7 @@
 
 useHead({ title: "Tambah Transaksi — CashPlow" });
 
+const route = useRoute();
 const router = useRouter();
 const { formatIDR } = useCurrency();
 const isOnline = useOnline();
@@ -16,7 +17,17 @@ const toast = reactive({
 });
 
 // ── Transaction type tabs ─────────────────────────────────────
-const txType = ref<"EXPENSE" | "INCOME" | "TRANSFER">("EXPENSE");
+const txType = ref<"EXPENSE" | "INCOME" | "TRANSFER">(
+    (route.query.type && ["EXPENSE", "INCOME", "TRANSFER"].includes(route.query.type as string))
+        ? (route.query.type as any)
+        : "EXPENSE"
+);
+
+onMounted(() => {
+    if (route.query.action === 'scan') {
+        showScannerModal.value = true;
+    }
+});
 
 const typeOptions = [
     {
@@ -92,29 +103,32 @@ const addTag = () => {
     const t = tagInput.value.trim().replace(/^#/, "");
     if (t && !form.tags.includes(t)) {
         form.tags.push(t);
+        triggerHaptic('light');
     }
     tagInput.value = "";
 };
 const removeTag = (idx: number) => {
     form.tags.splice(idx, 1);
+    triggerHaptic('light');
 };
 
 // ── Receipt Photo helpers ────────────────────────────────────
 const receiptFileInput = ref<HTMLInputElement | null>(null);
 const showReceiptPreview = ref(false);
 
-const handleReceiptUpload = (e: Event) => {
+const handleReceiptUpload = async (e: Event) => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-        alert("Ukuran foto struk maksimal 5 MB");
+    if (file.size > 10 * 1024 * 1024) {
+        alert("Ukuran foto struk maksimal 10 MB");
         return;
     }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        form.receiptImage = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    try {
+        const compressedBase64 = await compressImage(file, 1024, 1024, 0.75);
+        form.receiptImage = compressedBase64;
+    } catch (err) {
+        console.error("Gagal mengompres gambar struk", err);
+    }
 };
 
 const removeReceipt = () => {
@@ -376,6 +390,7 @@ const submit = async () => {
         }
 
         toast.show = true;
+        triggerHaptic('success');
 
         // Navigate back after a brief delay
         setTimeout(() => {
@@ -386,6 +401,7 @@ const submit = async () => {
         toast.type = "error";
         toast.show = true;
         saving.value = false;
+        triggerHaptic('error');
     }
 };
 

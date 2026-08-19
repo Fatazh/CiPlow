@@ -42,19 +42,19 @@ interface ColorConfig {
 const getColorConfig = (pct: number): ColorConfig => {
   if (pct >= 100) {
     return {
-      bar:     'bg-gradient-to-r from-rose-500 to-rose-600',
-      barGlow: 'shadow-[0_0_8px_2px_rgba(244,63,94,0.4)]',
-      text:    'text-rose-500 dark:text-rose-400',
-      bg:      'bg-rose-50 dark:bg-rose-950/30',
-      badge:   'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300',
+      bar:     'bg-gradient-to-r from-rose-500 to-rose-600 animate-pulse',
+      barGlow: 'shadow-[0_0_12px_3px_rgba(244,63,94,0.5)] ring-1 ring-rose-300',
+      text:    'text-rose-600 dark:text-rose-400 font-black',
+      bg:      'bg-rose-50 dark:bg-rose-950/40',
+      badge:   'bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300 ring-1 ring-rose-200 dark:ring-rose-800',
       icon:    'text-rose-500',
     }
   }
   if (pct >= 85) {
     return {
       bar:     'bg-gradient-to-r from-amber-400 to-orange-500',
-      barGlow: 'shadow-[0_0_8px_2px_rgba(251,146,60,0.35)]',
-      text:    'text-amber-600 dark:text-amber-400',
+      barGlow: 'shadow-[0_0_10px_2px_rgba(251,146,60,0.4)]',
+      text:    'text-amber-600 dark:text-amber-400 font-black',
       bg:      'bg-amber-50 dark:bg-amber-950/30',
       badge:   'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
       icon:    'text-amber-500',
@@ -62,7 +62,7 @@ const getColorConfig = (pct: number): ColorConfig => {
   }
   if (pct >= 60) {
     return {
-      bar:     'bg-gradient-to-r from-yellow-400 to-amber-400',
+      bar:     'bg-gradient-to-r from-yellow-400 to-amber-500',
       barGlow: '',
       text:    'text-yellow-600 dark:text-yellow-400',
       bg:      'bg-yellow-50 dark:bg-yellow-950/30',
@@ -71,12 +71,12 @@ const getColorConfig = (pct: number): ColorConfig => {
     }
   }
   return {
-    bar:     'bg-gradient-to-r from-emerald-400 to-teal-500',
-    barGlow: '',
-    text:    'text-emerald-600 dark:text-emerald-400',
-    bg:      'bg-emerald-50 dark:bg-emerald-950/20',
-    badge:   'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300',
-    icon:    'text-emerald-500',
+    bar:     'bg-gradient-to-r from-primary-400 to-primary-600',
+    barGlow: 'shadow-xs shadow-primary-500/20',
+    text:    'text-primary-600 dark:text-primary-400',
+    bg:      'bg-primary-50/50 dark:bg-primary-950/20',
+    badge:   'bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300',
+    icon:    'text-primary-500',
   }
 }
 

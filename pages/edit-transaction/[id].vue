@@ -108,18 +108,19 @@ const removeTag = (idx: number) => {
 const receiptFileInput = ref<HTMLInputElement | null>(null);
 const showReceiptPreview = ref(false);
 
-const handleReceiptUpload = (e: Event) => {
+const handleReceiptUpload = async (e: Event) => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-        alert("Ukuran foto struk maksimal 5 MB");
+    if (file.size > 10 * 1024 * 1024) {
+        alert("Ukuran foto struk maksimal 10 MB");
         return;
     }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        form.receiptImage = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    try {
+        const compressedBase64 = await compressImage(file, 1024, 1024, 0.75);
+        form.receiptImage = compressedBase64;
+    } catch (err) {
+        console.error("Gagal mengompres gambar struk", err);
+    }
 };
 
 const removeReceipt = () => {
