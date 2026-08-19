@@ -28,6 +28,8 @@ const tx = await prisma.transaction.findFirst({
       description: tx.description,
       notes: tx.notes,
       date: tx.date.toISOString(),
+      tags: tx.tags || [],
+      receiptImage: tx.receiptImage || null,
       quantity: tx.quantity,
       unitPrice: tx.unitPrice ? Number(tx.unitPrice) : null,
       isPromo: tx.isPromo,

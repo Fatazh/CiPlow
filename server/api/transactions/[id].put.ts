@@ -22,7 +22,9 @@ const transactionUpdateSchema = z.object({
   isPromo: z.boolean().optional(),
   promoType: z.nativeEnum(PromoType).optional(),
   promoValue: z.number().optional(),
-  promoDetails: z.string().optional()
+  promoDetails: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  receiptImage: z.string().optional().nullable(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -134,6 +136,8 @@ export default defineEventHandler(async (event) => {
         ...(body.promoType !== undefined && { promoType: body.promoType }),
         ...(body.promoValue !== undefined && { promoValue: body.promoValue }),
         ...(body.promoDetails !== undefined && { promoDetails: body.promoDetails?.trim() || null }),
+        ...(body.tags !== undefined && { tags: body.tags }),
+        ...(body.receiptImage !== undefined && { receiptImage: body.receiptImage }),
         targetAmount,
         exchangeRate,
       },

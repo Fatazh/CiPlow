@@ -6,6 +6,15 @@ useHead({ title: "Riwayat Transaksi — CashPlow" });
 const { formatIDR, maskBalance } = useCurrency();
 const { formatSmart, groupByDate } = useDate();
 
+// ── View mode (list vs calendar) ────────────────────────────
+const currentView = ref<'list' | 'calendar'>('list');
+
+// ── Filter Modes (Month, Last 7 Days, Last 30 Days, Custom Range) ─
+const filterMode = ref<'MONTH' | 'LAST_7_DAYS' | 'LAST_30_DAYS' | 'CUSTOM'>('MONTH');
+const customStartDate = ref('');
+const customEndDate = ref('');
+const filterTag = ref('');
+
 // ── Filters ─────────────────────────────────────────────────
 const now = new Date();
 const filter = reactive({
@@ -64,12 +73,31 @@ const nextMonth = () => {
 // ── Fetch transactions ──────────────────────────────────────
 const apiUrl = computed(() => {
     const params = new URLSearchParams();
-    params.set("month", String(filter.month));
-    params.set("year", String(filter.year));
+    if (filterMode.value === 'LAST_7_DAYS') {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 7);
+        params.set('startDate', start.toISOString());
+        params.set('endDate', end.toISOString());
+    } else if (filterMode.value === 'LAST_30_DAYS') {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 30);
+        params.set('startDate', start.toISOString());
+        params.set('endDate', end.toISOString());
+    } else if (filterMode.value === 'CUSTOM' && customStartDate.value && customEndDate.value) {
+        params.set('startDate', new Date(customStartDate.value).toISOString());
+        params.set('endDate', new Date(customEndDate.value + 'T23:59:59').toISOString());
+    } else {
+        params.set("month", String(filter.month));
+        params.set("year", String(filter.year));
+    }
+
     params.set("limit", "100");
     if (filter.type) params.set("type", filter.type);
     if (filter.categoryId) params.set("categoryId", filter.categoryId);
     if (filter.walletId) params.set("walletId", filter.walletId);
+    if (filterTag.value) params.set("tag", filterTag.value);
     if (filter.search.trim()) params.set("search", filter.search.trim());
     return `/api/transactions?${params.toString()}`;
 });
@@ -82,6 +110,40 @@ const {
 
 const transactions = computed(() => txRaw.value?.data ?? []);
 const loading = computed(() => status.value === "pending" && !txRaw.value);
+
+// Extract available tags from current transactions
+const availableTags = computed(() => {
+    const set = new Set<string>();
+    for (const t of transactions.value) {
+        if (t.tags && Array.isArray(t.tags)) {
+            for (const tag of t.tags) set.add(tag);
+        }
+    }
+    return Array.from(set);
+});
+
+// ── Receipt Fullscreen Modal ────────────────────────────────
+const previewReceiptUrl = ref<string | null>(null);
+const showReceiptModal = ref(false);
+
+const openReceiptPreview = (url: string) => {
+    previewReceiptUrl.value = url;
+    showReceiptModal.value = true;
+};
+
+// ── Calendar Events ─────────────────────────────────────────
+const handleCalendarSelectDate = (dateStr: string | null) => {
+    if (dateStr) {
+        filter.search = dateStr;
+    } else {
+        filter.search = "";
+    }
+};
+
+const handleCalendarChangeMonth = ({ month, year }: { month: number; year: number }) => {
+    filter.month = month;
+    filter.year = year;
+};
 
 // ── Group by date ──────────────────────────────────────────
 const grouped = computed(() => {
@@ -204,181 +266,279 @@ watch(searchInput, (val) => {
             </a>
         </div>
 
-        <!-- ── Month Navigation ──────────────────────────────────── -->
-        <div class="flex items-center justify-between px-1">
-            <button class="btn-icon w-8 h-8" @click="prevMonth">
-                <svg
-                    class="w-4 h-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="m15 18-6-6 6-6" />
-                </svg>
+        <!-- ── View Switcher (Daftar vs Kalender) ──────────────────── -->
+        <div class="flex items-center gap-1.5 p-1 rounded-2xl bg-gray-100 dark:bg-slate-800/80 border border-gray-200/50 dark:border-slate-700/50">
+            <button
+                type="button"
+                class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-center gap-2"
+                :class="currentView === 'list' ? 'bg-white dark:bg-slate-900 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'"
+                @click="currentView = 'list'"
+            >
+                <span>📑</span>
+                <span>Daftar Transaksi</span>
             </button>
-            <span class="text-sm font-bold text-gray-800 dark:text-gray-100">
-                {{ periodLabel }}
-            </span>
-            <button class="btn-icon w-8 h-8" @click="nextMonth">
-                <svg
-                    class="w-4 h-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="m9 18 6-6-6-6" />
-                </svg>
+            <button
+                type="button"
+                class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-center gap-2"
+                :class="currentView === 'calendar' ? 'bg-white dark:bg-slate-900 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'"
+                @click="currentView = 'calendar'"
+            >
+                <span>📅</span>
+                <span>Kalender Keuangan</span>
             </button>
         </div>
 
-        <!-- ── Summary Cards ─────────────────────────────────────── -->
-        <div class="grid grid-cols-3 gap-2">
-            <div class="card rounded-2xl p-3 text-center">
-                <p
-                    class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide"
-                >
-                    Masuk
-                </p>
-                <p class="text-sm font-bold text-emerald-500 mt-1">
-                    {{ formatIDR(totals.income) }}
-                </p>
-            </div>
-            <div class="card rounded-2xl p-3 text-center">
-                <p
-                    class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide"
-                >
-                    Keluar
-                </p>
-                <p class="text-sm font-bold text-rose-500 mt-1">
-                    {{ formatIDR(totals.expense) }}
-                </p>
-            </div>
-            <div class="card rounded-2xl p-3 text-center">
-                <p
-                    class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide"
-                >
-                    Bersih
-                </p>
-                <p
-                    class="text-sm font-bold mt-1"
-                    :class="
-                        totals.net >= 0 ? 'text-emerald-500' : 'text-rose-500'
-                    "
-                >
-                    {{ formatIDR(totals.net) }}
-                </p>
-            </div>
+        <!-- ── CALENDAR VIEW ─────────────────────────────────────── -->
+        <div v-if="currentView === 'calendar'">
+            <TransactionCalendarView
+                :transactions="transactions"
+                :current-month="filter.month"
+                :current-year="filter.year"
+                @select-date="handleCalendarSelectDate"
+                @change-month="handleCalendarChangeMonth"
+            />
         </div>
 
-        <!-- ── Filter Type + Search ──────────────────────────────── -->
-        <div class="space-y-2">
-            <!-- Type filter -->
-            <div class="flex gap-1.5 overflow-x-auto no-scrollbar">
+        <!-- ── LIST VIEW ─────────────────────────────────────────── -->
+        <div v-else class="space-y-4">
+            <!-- ── Date Filter Modes ─────────────────────────────────── -->
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
                 <button
-                    class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 active:scale-95"
-                    :class="
-                        filter.type === ''
-                            ? 'border-primary-400 bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400'
-                            : 'border-gray-200 dark:border-gray-800 text-gray-400'
-                    "
-                    @click="filter.type = ''"
+                    type="button"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex-shrink-0"
+                    :class="filterMode === 'MONTH' ? 'bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 border-primary-300 dark:border-primary-800' : 'bg-white dark:bg-slate-800/40 text-gray-500 border-gray-100 dark:border-slate-800'"
+                    @click="filterMode = 'MONTH'"
                 >
-                    Semua
+                    Bulanan
                 </button>
                 <button
-                    class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 active:scale-95"
-                    :class="
-                        filter.type === 'INCOME'
-                            ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400'
-                            : 'border-gray-200 dark:border-gray-800 text-gray-400'
-                    "
-                    @click="filter.type = 'INCOME'"
+                    type="button"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex-shrink-0"
+                    :class="filterMode === 'LAST_7_DAYS' ? 'bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 border-primary-300 dark:border-primary-800' : 'bg-white dark:bg-slate-800/40 text-gray-500 border-gray-100 dark:border-slate-800'"
+                    @click="filterMode = 'LAST_7_DAYS'"
                 >
-                    💰 Masuk
+                    7 Hari Terakhir
                 </button>
                 <button
-                    class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 active:scale-95"
-                    :class="
-                        filter.type === 'EXPENSE'
-                            ? 'border-rose-400 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400'
-                            : 'border-gray-200 dark:border-gray-800 text-gray-400'
-                    "
-                    @click="filter.type = 'EXPENSE'"
+                    type="button"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex-shrink-0"
+                    :class="filterMode === 'LAST_30_DAYS' ? 'bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 border-primary-300 dark:border-primary-800' : 'bg-white dark:bg-slate-800/40 text-gray-500 border-gray-100 dark:border-slate-800'"
+                    @click="filterMode = 'LAST_30_DAYS'"
                 >
-                    💸 Keluar
+                    30 Hari Terakhir
                 </button>
                 <button
-                    class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 active:scale-95"
-                    :class="
-                        filter.type === 'TRANSFER'
-                            ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400'
-                            : 'border-gray-200 dark:border-gray-800 text-gray-400'
-                    "
-                    @click="filter.type = 'TRANSFER'"
+                    type="button"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex-shrink-0"
+                    :class="filterMode === 'CUSTOM' ? 'bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 border-primary-300 dark:border-primary-800' : 'bg-white dark:bg-slate-800/40 text-gray-500 border-gray-100 dark:border-slate-800'"
+                    @click="filterMode = 'CUSTOM'"
                 >
-                    🔄 Transfer
+                    Rentang Kustom
                 </button>
             </div>
 
-            <!-- Search bar -->
-            <div class="relative">
-                <svg
-                    class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                </svg>
-                <input
-                    v-model="searchInput"
-                    type="text"
-                    class="input pl-10 text-xs"
-                    placeholder="Cari transaksi..."
-                />
+            <!-- Custom Date Inputs -->
+            <div v-if="filterMode === 'CUSTOM'" class="grid grid-cols-2 gap-2 p-3 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/60 animate-slide-up">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 block mb-1">Mulai</label>
+                    <input v-model="customStartDate" type="date" class="input text-xs py-1.5" />
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 block mb-1">Sampai</label>
+                    <input v-model="customEndDate" type="date" class="input text-xs py-1.5" />
+                </div>
             </div>
 
-            <!-- Wallet & Category Filter Row -->
-            <div class="grid grid-cols-2 gap-2">
-                <select
-                    v-model="filter.walletId"
-                    class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500/20 transition-all"
-                >
-                    <option value="">Semua Dompet</option>
-                    <option
-                        v-for="w in availableWallets"
-                        :key="w.id"
-                        :value="w.id"
+            <!-- ── Month Navigation (Only in Month Mode) ─────────────── -->
+            <div v-if="filterMode === 'MONTH'" class="flex items-center justify-between px-1">
+                <button class="btn-icon w-8 h-8" @click="prevMonth">
+                    <svg
+                        class="w-4 h-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
                     >
-                        {{ w.name }} ({{ formatIDR(w.balance) }})
-                    </option>
-                </select>
-
-                <select
-                    v-model="filter.categoryId"
-                    class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500/20 transition-all"
-                >
-                    <option value="">Semua Kategori</option>
-                    <option
-                        v-for="c in availableCategories"
-                        :key="c.id"
-                        :value="c.id"
+                        <path d="m15 18-6-6 6-6" />
+                    </svg>
+                </button>
+                <span class="text-sm font-bold text-gray-800 dark:text-gray-100">
+                    {{ periodLabel }}
+                </span>
+                <button class="btn-icon w-8 h-8" @click="nextMonth">
+                    <svg
+                        class="w-4 h-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
                     >
-                        {{ c.icon }} {{ c.name }}
-                    </option>
-                </select>
+                        <path d="m9 18 6-6-6-6" />
+                    </svg>
+                </button>
             </div>
-        </div>
+
+            <!-- ── Summary Cards ─────────────────────────────────────── -->
+            <div class="grid grid-cols-3 gap-2">
+                <div class="card rounded-2xl p-3 text-center">
+                    <p
+                        class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide"
+                    >
+                        Masuk
+                    </p>
+                    <p class="text-sm font-bold text-emerald-500 mt-1">
+                        {{ formatIDR(totals.income) }}
+                    </p>
+                </div>
+                <div class="card rounded-2xl p-3 text-center">
+                    <p
+                        class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide"
+                    >
+                        Keluar
+                    </p>
+                    <p class="text-sm font-bold text-rose-500 mt-1">
+                        {{ formatIDR(totals.expense) }}
+                    </p>
+                </div>
+                <div class="card rounded-2xl p-3 text-center">
+                    <p
+                        class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide"
+                    >
+                        Bersih
+                    </p>
+                    <p
+                        class="text-sm font-bold mt-1"
+                        :class="
+                            totals.net >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                        "
+                    >
+                        {{ formatIDR(totals.net) }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- ── Filter Type + Search + Tags ───────────────────────── -->
+            <div class="space-y-2">
+                <!-- Type filter -->
+                <div class="flex gap-1.5 overflow-x-auto no-scrollbar">
+                    <button
+                        class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 active:scale-95"
+                        :class="
+                            filter.type === ''
+                                ? 'border-primary-400 bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400'
+                                : 'border-gray-200 dark:border-gray-800 text-gray-400'
+                        "
+                        @click="filter.type = ''"
+                    >
+                        Semua
+                    </button>
+                    <button
+                        class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 active:scale-95"
+                        :class="
+                            filter.type === 'INCOME'
+                                ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400'
+                                : 'border-gray-200 dark:border-gray-800 text-gray-400'
+                        "
+                        @click="filter.type = 'INCOME'"
+                    >
+                        💰 Masuk
+                    </button>
+                    <button
+                        class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 active:scale-95"
+                        :class="
+                            filter.type === 'EXPENSE'
+                                ? 'border-rose-400 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400'
+                                : 'border-gray-200 dark:border-gray-800 text-gray-400'
+                        "
+                        @click="filter.type = 'EXPENSE'"
+                    >
+                        💸 Keluar
+                    </button>
+                    <button
+                        class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 active:scale-95"
+                        :class="
+                            filter.type === 'TRANSFER'
+                                ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400'
+                                : 'border-gray-200 dark:border-gray-800 text-gray-400'
+                        "
+                        @click="filter.type = 'TRANSFER'"
+                    >
+                        🔄 Transfer
+                    </button>
+                </div>
+
+                <!-- Search bar -->
+                <div class="relative">
+                    <svg
+                        class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                    </svg>
+                    <input
+                        v-model="searchInput"
+                        type="text"
+                        class="input pl-10 text-xs"
+                        placeholder="Cari transaksi..."
+                    />
+                </div>
+
+                <!-- Wallet, Category, & Tag Filter Row -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <select
+                        v-model="filter.walletId"
+                        class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500/20 transition-all"
+                    >
+                        <option value="">Semua Dompet</option>
+                        <option
+                            v-for="w in availableWallets"
+                            :key="w.id"
+                            :value="w.id"
+                        >
+                            {{ w.name }} ({{ formatIDR(w.balance) }})
+                        </option>
+                    </select>
+
+                    <select
+                        v-model="filter.categoryId"
+                        class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500/20 transition-all"
+                    >
+                        <option value="">Semua Kategori</option>
+                        <option
+                            v-for="c in availableCategories"
+                            :key="c.id"
+                            :value="c.id"
+                        >
+                            {{ c.icon }} {{ c.name }}
+                        </option>
+                    </select>
+
+                    <select
+                        v-if="availableTags.length > 0"
+                        v-model="filterTag"
+                        class="w-full col-span-2 sm:col-span-1 px-3 py-2.5 rounded-xl bg-white dark:bg-surface-900 border border-gray-100 dark:border-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-500/20 transition-all"
+                    >
+                        <option value="">Semua Tag</option>
+                        <option
+                            v-for="t in availableTags"
+                            :key="t"
+                            :value="t"
+                        >
+                            #{{ t }}
+                        </option>
+                    </select>
+                </div>
+            </div>
 
         <!-- ── Skeleton ──────────────────────────────────────────── -->
         <div v-if="loading" class="space-y-4">
@@ -509,6 +669,17 @@ watch(searchInput, (val) => {
                                         >{{ tx.promoDetails }}</span
                                     >
                                 </p>
+
+                                <!-- Tag chips -->
+                                <div v-if="tx.tags && tx.tags.length > 0" class="flex flex-wrap gap-1 mt-1.5">
+                                    <span
+                                        v-for="tag in tx.tags"
+                                        :key="tag"
+                                        class="inline-block text-[9px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/40 px-1.5 py-0.5 rounded border border-primary-200 dark:border-primary-800/60"
+                                    >
+                                        #{{ tag }}
+                                    </span>
+                                </div>
                             </div>
 
                             <!-- Amount -->
@@ -536,8 +707,17 @@ watch(searchInput, (val) => {
 
                         <!-- Action buttons -->
                         <div
-                            class="flex justify-end gap-3 mt-2 pt-2 border-t border-gray-50 dark:border-gray-800/50"
+                            class="flex justify-end items-center gap-3 mt-2 pt-2 border-t border-gray-50 dark:border-gray-800/50"
                         >
+                            <button
+                                v-if="tx.receiptImage"
+                                type="button"
+                                class="text-[11px] font-bold text-blue-500 hover:text-blue-600 dark:text-blue-400 transition-colors px-2 py-0.5 flex items-center gap-1 mr-auto"
+                                @click="openReceiptPreview(tx.receiptImage)"
+                            >
+                                <span>🧾</span>
+                                <span>Lihat Struk</span>
+                            </button>
                             <NuxtLink
                                 :to="`/edit-transaction/${tx.id}`"
                                 class="text-[11px] font-medium text-primary-400 hover:text-primary-500 transition-colors px-2 py-0.5"
@@ -579,9 +759,17 @@ watch(searchInput, (val) => {
                 Tambah Transaksi
             </NuxtLink>
         </div>
+        </div>
 
         <!-- Bottom spacer -->
         <div class="h-2" />
+
+        <!-- ── Receipt Photo Fullscreen Preview Modal ───────── -->
+        <ReceiptModal
+            v-model="showReceiptModal"
+            :image-url="previewReceiptUrl"
+            title="Foto Struk Transaksi"
+        />
 
         <!-- ── Delete Confirm ────────────────────────────────────── -->
         <ConfirmDialog

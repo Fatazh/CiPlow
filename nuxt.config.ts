@@ -125,6 +125,36 @@ export default defineNuxtConfig({
           purpose: "monochrome",
         },
       ],
+      shortcuts: [
+        {
+          name: "Catat Pengeluaran",
+          short_name: "Pengeluaran",
+          description: "Catat pengeluaran baru dengan cepat",
+          url: "/add-transaction?type=EXPENSE",
+          icons: [{ src: "/icon-192x192.png", sizes: "192x192" }],
+        },
+        {
+          name: "Catat Pemasukan",
+          short_name: "Pemasukan",
+          description: "Catat pemasukan baru",
+          url: "/add-transaction?type=INCOME",
+          icons: [{ src: "/icon-192x192.png", sizes: "192x192" }],
+        },
+        {
+          name: "Scan Struk AI",
+          short_name: "Scan Struk",
+          description: "Scan struk belanja dengan Gemini AI",
+          url: "/add-transaction?scan=true",
+          icons: [{ src: "/icon-192x192.png", sizes: "192x192" }],
+        },
+        {
+          name: "Hutang & Piutang",
+          short_name: "Hutang",
+          description: "Buka catatan hutang dan piutang",
+          url: "/debts",
+          icons: [{ src: "/icon-192x192.png", sizes: "192x192" }],
+        },
+      ],
     },
     workbox: {
       importScripts: ["/custom-sw.js"],

@@ -101,6 +101,8 @@ model Transaction {
   promoType    PromoType?
   promoValue   Decimal?        @db.Decimal(15, 2)
   promoDetails String?
+  tags         String[]        @default([])
+  receiptImage String?
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   userId       String

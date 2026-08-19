@@ -36,6 +36,12 @@ const { data: smartRaw, pending: smartLoading } = useLazyFetch(
     { key: "smart-insights" },
 );
 
+// ── API: All transactions for Monthly Recap ───────────────────
+const { data: allTransactionsRaw } = useLazyFetch('/api/transactions?limit=100', {
+    key: 'analytics-all-tx'
+});
+const allTransactions = computed(() => allTransactionsRaw.value?.data || []);
+
 // ── Typed accessors ────────────────────────────────────────────
 const trendData = computed(() => trendsRaw.value?.data ?? null);
 const catData = computed(() => catRaw.value?.data ?? null);
@@ -161,6 +167,13 @@ const fallbackSummary = {
 
         <!-- ── Period Selector ───────────────────────────────────── -->
         <PeriodSelector v-model="period" :available-months="availableMonths" />
+
+        <!-- ── Monthly Financial Recap Infographic Card ───────────── -->
+        <MonthlyRecapCard
+            :transactions="allTransactions"
+            :month="period.month"
+            :year="period.year"
+        />
 
         <!-- ── Quick Stats strip ──────────────────────────────────── -->
         <!-- Skeleton -->

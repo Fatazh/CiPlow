@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+export type AccentTheme = 'emerald' | 'ocean' | 'violet' | 'amber' | 'rose'
 
 export const useUserStore = defineStore('user', () => {
   const { user, updateUser } = useAuth()
@@ -11,6 +11,18 @@ export const useUserStore = defineStore('user', () => {
   // ── Privacy Mode (Hide/Mask Balance Globally) ───────────────
   const isBalanceHidden = ref(false)
 
+  // ── Accent Color Theme ──────────────────────────────────────
+  const accentTheme = ref<AccentTheme>('emerald')
+
+  const applyAccentThemeClass = (theme: AccentTheme) => {
+    if (!import.meta.client) return
+    const root = document.documentElement
+    root.classList.remove('theme-ocean', 'theme-violet', 'theme-amber', 'theme-rose')
+    if (theme !== 'emerald') {
+      root.classList.add(`theme-${theme}`)
+    }
+  }
+
   // Initial load
   if (import.meta.client) {
     const savedCurrency = localStorage.getItem('CashPlow-currency')
@@ -21,8 +33,22 @@ export const useUserStore = defineStore('user', () => {
       isBalanceHidden.value = savedHideBalance === 'true'
     }
 
+    const savedTheme = localStorage.getItem('ciplow_accent_theme') as AccentTheme | null
+    if (savedTheme) {
+      accentTheme.value = savedTheme
+      applyAccentThemeClass(savedTheme)
+    }
+
     // Clean up any legacy PIN data
     localStorage.removeItem('ciplow_app_pin')
+  }
+
+  const setAccentTheme = (theme: AccentTheme) => {
+    accentTheme.value = theme
+    applyAccentThemeClass(theme)
+    if (import.meta.client) {
+      localStorage.setItem('ciplow_accent_theme', theme)
+    }
   }
 
   const toggleBalanceHidden = () => {
@@ -51,6 +77,8 @@ export const useUserStore = defineStore('user', () => {
     currency,
     locale,
     isBalanceHidden,
+    accentTheme,
+    setAccentTheme,
     toggleBalanceHidden,
     setCurrency
   }

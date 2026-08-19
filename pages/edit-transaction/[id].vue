@@ -86,7 +86,46 @@ const form = reactive({
     promoType: "PERCENTAGE" as "PERCENTAGE" | "FIXED" | "BUY_X_GET_Y",
     promoValue: 0,
     promoDetails: "",
+    // Tags & Receipt
+    tags: [] as string[],
+    receiptImage: "" as string,
 });
+
+// ── Tags helpers ─────────────────────────────────────────────
+const tagInput = ref("");
+const addTag = () => {
+    const t = tagInput.value.trim().replace(/^#/, "");
+    if (t && !form.tags.includes(t)) {
+        form.tags.push(t);
+    }
+    tagInput.value = "";
+};
+const removeTag = (idx: number) => {
+    form.tags.splice(idx, 1);
+};
+
+// ── Receipt Photo helpers ────────────────────────────────────
+const receiptFileInput = ref<HTMLInputElement | null>(null);
+const showReceiptPreview = ref(false);
+
+const handleReceiptUpload = (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+        alert("Ukuran foto struk maksimal 5 MB");
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        form.receiptImage = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+};
+
+const removeReceipt = () => {
+    form.receiptImage = "";
+    if (receiptFileInput.value) receiptFileInput.value.value = "";
+};
 
 // Auto-calculate amount for EXPENSE
 watch(
@@ -227,6 +266,10 @@ watch(
                     : "";
             form.promoDetails = data.promoDetails ?? "";
 
+            // Tags and Receipt Photo
+            form.tags = data.tags ? [...data.tags] : [];
+            form.receiptImage = data.receiptImage || "";
+
             // Set amount display
             amountDisplay.value =
                 data.amount > 0 ? data.amount.toLocaleString("id-ID") : "";
@@ -355,7 +398,9 @@ const hasChanges = computed(() => {
         (form.isPromo &&
             (form.promoType !== (d.promoType ?? "PERCENTAGE") ||
                 form.promoValue !== (d.promoValue ?? 0) ||
-                form.promoDetails !== (d.promoDetails ?? "")))
+                form.promoDetails !== (d.promoDetails ?? ""))) ||
+        JSON.stringify(form.tags) !== JSON.stringify(d.tags || []) ||
+        form.receiptImage !== (d.receiptImage || "")
     );
 });
 
@@ -392,6 +437,8 @@ const submit = async () => {
                     form.isPromo && form.promoType === "BUY_X_GET_Y"
                         ? form.promoDetails
                         : undefined,
+                tags: form.tags,
+                receiptImage: form.receiptImage || null,
             },
         });
 
@@ -1212,6 +1259,113 @@ const submit = async () => {
                         ></textarea>
                     </div>
                 </template>
+
+                <!-- ── Tags / Label Khusus ───────────────────────────── -->
+                <div class="card rounded-2xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+                            <span>🏷️</span>
+                            <span>Label / Tag Transaksi</span>
+                        </label>
+                        <span class="text-[10px] text-gray-400">Opsional</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <div class="relative flex-1">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">#</span>
+                            <input
+                                v-model="tagInput"
+                                type="text"
+                                class="input pl-7 text-xs"
+                                placeholder="tambah tag (misal: Liburan, Hobi, Cafe)..."
+                                @keydown.enter.prevent="addTag"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            class="px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                            @click="addTag"
+                        >
+                            + Tag
+                        </button>
+                    </div>
+
+                    <!-- Tag Chips -->
+                    <div v-if="form.tags.length > 0" class="flex flex-wrap gap-1.5 pt-1">
+                        <span
+                            v-for="(tag, idx) in form.tags"
+                            :key="idx"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-800"
+                        >
+                            <span>#{{ tag }}</span>
+                            <button
+                                type="button"
+                                class="w-3.5 h-3.5 rounded-full hover:bg-primary-200 dark:hover:bg-primary-800 flex items-center justify-center text-[10px] leading-none"
+                                @click="removeTag(idx)"
+                            >
+                                ✕
+                            </button>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- ── Lampiran Foto Struk / Nota ─────────────────────── -->
+                <div class="card rounded-2xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+                            <span>🧾</span>
+                            <span>Lampiran Foto Struk / Nota</span>
+                        </label>
+                        <span class="text-[10px] text-gray-400">Maks 5 MB</span>
+                    </div>
+
+                    <input
+                        ref="receiptFileInput"
+                        type="file"
+                        accept="image/*"
+                        class="hidden"
+                        @change="handleReceiptUpload"
+                    />
+
+                    <div v-if="!form.receiptImage">
+                        <button
+                            type="button"
+                            class="w-full py-3.5 px-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 hover:border-primary-500 hover:bg-primary-50/20 text-gray-500 dark:text-gray-400 text-xs font-bold flex items-center justify-center gap-2 transition-all duration-150"
+                            @click="receiptFileInput?.click()"
+                        >
+                            <span>📷</span>
+                            <span>Unggah Foto Struk / Bukti Bayar</span>
+                        </button>
+                    </div>
+
+                    <div v-else class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <img
+                                :src="form.receiptImage"
+                                alt="Struk"
+                                class="w-12 h-12 object-cover rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                                @click="showReceiptPreview = true"
+                            />
+                            <div>
+                                <p class="text-xs font-bold text-gray-800 dark:text-white">Foto Struk Terlampir</p>
+                                <button
+                                    type="button"
+                                    class="text-[11px] font-semibold text-primary-500 hover:underline"
+                                    @click="showReceiptPreview = true"
+                                >
+                                    Lihat Ukuran Penuh
+                                </button>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            class="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-xs font-bold transition-colors"
+                            @click="removeReceipt"
+                        >
+                            Hapus
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Changes indicator -->
@@ -1404,6 +1558,13 @@ const submit = async () => {
                 </button>
             </div>
         </BottomSheet>
+
+        <!-- ── Receipt Photo Fullscreen Preview Modal ───────── -->
+        <ReceiptModal
+            v-model="showReceiptPreview"
+            :image-url="form.receiptImage"
+            title="Preview Foto Struk"
+        />
 
         <!-- Toast -->
         <Toast
