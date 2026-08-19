@@ -114,9 +114,8 @@ export default defineEventHandler(async (event) => {
       totalBalanceInBase += Number(w.balance)
     } else {
       try {
-        // We fetch current rate from our own API
-        const rateRes = await $fetch<any>(`/api/exchange-rates?base=${w.currency}&target=${baseCurrency}`)
-        totalBalanceInBase += Number(w.balance) * (rateRes.rate ?? 1)
+        const rate = await getExchangeRate(w.currency, baseCurrency)
+        totalBalanceInBase += Number(w.balance) * rate
       } catch (e) {
         totalBalanceInBase += Number(w.balance)
       }

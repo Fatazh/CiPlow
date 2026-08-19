@@ -23,9 +23,22 @@ const close = () => {
 
 const changelogs = [
     {
-        version: "v1.2.4",
+        version: "v1.2.5",
         date: "Agustus 2026",
         isLatest: true,
+        highlights: [
+            "📳 **Haptic Feedback Sentuhan Mobile**: Umpan balik getaran mikro responsif saat menekan tombol navigasi, keypad angka kalkulator, beralih tab, dan menyimpan transaksi.",
+            "🔘 **FAB Speed-Dial Action Menu**: Tombol tambah melayang interaktif untuk akses langsung 1-klik ke Catat Pengeluaran, Catat Pemasukan, Transfer Dompet, Scan Struk AI, dan Bagi Tagihan.",
+            "📈 **Proyeksi Arus Kas Akhir Bulan (Cashflow Forecast)**: Analitik pintar perkiraan sisa saldo di akhir bulan berdasarkan daily burn rate, sisa hari, dan tagihan berulang mendatang.",
+            "🧮 **Kalkulator Bagi Tagihan (Split Bill)**: Hitung pembagian tagihan kelompok lengkap dengan PPN % & Service Charge % serta tombol pintas catat piutang otomatis.",
+            "📊 **Indikator Budget Adaptif & Glow Alert**: Visualisasi progress bar anggaran dinamis yang berdenyut (pulsing glow) saat pengeluaran mendekati atau melampaui batas bulanan.",
+            "🗄️ **Optimasi Database Compound Indexing**: Compound index multi-kolom pada PostgreSQL untuk eksekusi kueri transaksi dan analitik yang super cepat.",
+        ]
+    },
+    {
+        version: "v1.2.4",
+        date: "Agustus 2026",
+        isLatest: false,
         highlights: [
             "🎨 **Tema Warna Kustom (Accent Theme Engine)**: Pilih dari 5 tema warna premium (Emerald, Ocean Blue, Violet Luxury, Amber Gold, Rose Passion) langsung dari profil.",
             "📅 **Kalender Finansial Interaktif**: Kalender bulanan visual dengan indikator nominal harian, heatmap pengeluaran, dan filter per tanggal.",
@@ -169,7 +182,7 @@ const changelogs = [
                                     <p
                                         class="text-xs font-bold text-primary-600 dark:text-primary-400 mt-1 inline-flex items-center gap-1.5 px-3 py-1 bg-primary-50 dark:bg-primary-950/40 rounded-full"
                                     >
-                                        <span>Versi 1.2.4</span>
+                                        <span>Versi 1.2.5</span>
                                         <span>✨ Rilis Terbaru</span>
                                     </p>
                                 </div>

@@ -36,6 +36,13 @@ const { data: smartRaw, pending: smartLoading } = useLazyFetch(
     { key: "smart-insights" },
 );
 
+// ── API: Wallets for Current Balance ──────────────────────────
+const { data: walletsRaw } = useLazyFetch<any>('/api/wallets', { key: 'analytics-wallets' });
+const totalBalance = computed(() => {
+    const list = walletsRaw.value?.data || [];
+    return list.reduce((sum: number, w: any) => sum + (Number(w.balance) || 0), 0);
+});
+
 // ── API: All transactions for Monthly Recap ───────────────────
 const { data: allTransactionsRaw } = useLazyFetch('/api/transactions?limit=100', {
     key: 'analytics-all-tx'
@@ -253,6 +260,13 @@ const fallbackSummary = {
             :income="catData?.income ?? fallbackIncome"
             :expense="catData?.expense ?? fallbackExpense"
             :loading="catLoading && !catData"
+        />
+
+        <!-- ── Cashflow Forecast (Proyeksi Akhir Bulan) ─────────── -->
+        <CashflowForecastCard
+            :income="catData?.summary?.income ?? 0"
+            :expense="catData?.summary?.expense ?? 0"
+            :current-balance="totalBalance"
         />
 
         <!-- ── AI Financial Advisor (Gemini) ──────────────────────── -->

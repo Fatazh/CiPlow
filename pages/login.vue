@@ -276,7 +276,7 @@ const handleLogin = async () => {
             <p
                 class="text-center text-[11px] text-gray-300 dark:text-gray-700 mt-8"
             >
-                CashPlow v1.2.4 — Personal Budget Tracker
+                CashPlow v1.2.5 — Personal Budget Tracker
             </p>
         </div>
     </div>

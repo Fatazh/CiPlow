@@ -4,7 +4,32 @@ Dokumen ini memuat catatan perbaikan terbaru, analisis celah bug & keamanan, bag
 
 ---
 
-## 🎨 1. Catatan Fitur Baru & Perubahan (Rilis Versi 1.2.4)
+## 🚀 1. Catatan Fitur Baru & Peningkatan (Rilis Versi 1.2.5)
+
+### A. Haptic Feedback Engine (`utils/haptics.ts`)
+- **Umpan Balik Taktil Sentuh:** Memberikan respons getaran mikro halus pada smartphone saat berinteraksi dengan tombol navigasi, keypad kalkulator, switch tab kalender, dan simpan transaksi.
+
+### B. FAB Speed-Dial Action Menu ([components/layout/BottomNav.vue](file:///c:/Users/2080/Documents/apps/cob/CiPlow/components/layout/BottomNav.vue))
+- **Aksi Cepat 1-Klik:** Tombol mengambang (+) kini membuka speed dial melayang interaktif untuk langsung mencatat *Pengeluaran*, *Pemasukan*, *Transfer Dompet*, *Scan Struk AI*, atau membuka kalkulator *Bagi Tagihan*.
+
+### C. Proyeksi Arus Kas Akhir Bulan (*Cashflow Forecast*)
+- **Komponen Cerdas:** [components/analytics/CashflowForecastCard.vue](file:///c:/Users/2080/Documents/apps/cob/CiPlow/components/analytics/CashflowForecastCard.vue) di halaman Analitik menghitung sisa hari, laju pengeluaran harian (*burn rate*), tagihan berulang yang belum jatuh tempo, status kesehatan finansial (*Surplus Aman / Waspada / Defisit*), dan batas aman belanja harian.
+
+### D. Kalkulator Bagi Tagihan (*Split Bill Calculator*)
+- **Komponen:** [components/transactions/SplitBillModal.vue](file:///c:/Users/2080/Documents/apps/cob/CiPlow/components/transactions/SplitBillModal.vue) mempermudah membagi tagihan makan bersama/belanja kelompok dengan kalkulasi otomatis PPN % & Service Charge %, bagi rata atau kustom, tombol pintas catat piutang otomatis, serta tombol salin format pesan WhatsApp.
+
+### E. Indikator Progress Bar Anggaran Adaptif & Glow Alert
+- **Komponen:** [components/dashboard/BudgetProgress.vue](file:///c:/Users/2080/Documents/apps/cob/CiPlow/components/dashboard/BudgetProgress.vue) dilengkapi efek *pulsing glow* dan *ring alert* dinamis saat pengeluaran mendekati 85% atau melampaui 100%.
+
+### F. Kompresi Gambar Struk Client-Side ([utils/imageCompressor.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/utils/imageCompressor.ts))
+- **Optimasi Ukuran Berkas:** Foto kamera ponsel resolusi tinggi (4–8 MB) otomatis dikompresi menjadi ~60–120 KB sebelum disimpan ke database, menjaga performa kueri tetap super cepat.
+
+### G. Optimasi Database Compound Indexing
+- **Performa Kueri Tinggi:** Penambahan multi-column compound index `[userId, date, type]`, `[userId, categoryId]`, `[userId, status]`, `[userId, dueDate]`, dan `[userId, isCompleted]` pada PostgreSQL via Prisma.
+
+---
+
+## 🎨 2. Catatan Rilis Versi 1.2.4 (Sebelumnya)
 
 ### A. Tema Warna Kustom (Accent Theme Engine)
 - **Token Variabel CSS Dinamis:** Tailwind CSS `primary` dikonfigurasi dinamis mengarah ke CSS variables di [tailwind.config.ts](file:///c:/Users/2080/Documents/apps/cob/CiPlow/tailwind.config.ts) & [assets/css/main.css](file:///c:/Users/2080/Documents/apps/cob/CiPlow/assets/css/main.css).
