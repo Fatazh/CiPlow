@@ -182,6 +182,14 @@ const savingsAmount = computed(() => {
   return 0
 })
 
+const scrollContainerRef = ref<HTMLElement | null>(null)
+
+const scrollToTop = () => {
+  nextTick(() => {
+    scrollContainerRef.value?.scrollTo({ top: 0, behavior: 'smooth' })
+  })
+}
+
 // ── Reset & Initialize on Open ─────────────────────────────────
 const resetForm = () => {
   errorMessage.value = ''
@@ -217,7 +225,9 @@ watch(
   () => props.modelValue,
   (isOpen) => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden'
+      if (import.meta.client && typeof document !== 'undefined') {
+        document.body.style.overflow = 'hidden'
+      }
       refreshWallets()
       refreshCategories()
       resetForm()
@@ -245,14 +255,18 @@ watch(
         }
       }
     } else {
-      document.body.style.overflow = ''
+      if (import.meta.client && typeof document !== 'undefined') {
+        document.body.style.overflow = ''
+      }
     }
   },
   { immediate: true }
 )
 
 onUnmounted(() => {
-  document.body.style.overflow = ''
+  if (import.meta.client && typeof document !== 'undefined') {
+    document.body.style.overflow = ''
+  }
 })
 
 // ── Tags & Photo Handlers ─────────────────────────────────────
@@ -275,6 +289,7 @@ const handleReceiptUpload = async (e: Event) => {
   if (!file) return
   if (file.size > 10 * 1024 * 1024) {
     errorMessage.value = 'Ukuran foto maksimal 10 MB'
+    scrollToTop()
     return
   }
   try {
@@ -311,14 +326,25 @@ const closeModal = () => {
 const handleSubmit = async () => {
   if (form.amount <= 0) {
     errorMessage.value = 'Nominal harus lebih dari 0'
+    scrollToTop()
     return
   }
   if (!form.categoryId) {
     errorMessage.value = 'Pilih kategori terlebih dahulu'
+    scrollToTop()
     return
   }
   if (!form.walletId) {
     errorMessage.value = isExpense.value ? 'Pilih dompet sumber' : 'Pilih dompet tujuan'
+    scrollToTop()
+    return
+  }
+
+  // Pre-check for insufficient balance on Expense
+  if (isExpense.value && selectedWallet.value && Number(selectedWallet.value.balance) < form.amount) {
+    errorMessage.value = `Saldo sumber dana tidak mencukupi. Saldo '${selectedWallet.value.name}' saat ini : ${Number(selectedWallet.value.balance)}`
+    scrollToTop()
+    triggerHaptic('error')
     return
   }
 
@@ -365,6 +391,7 @@ const handleSubmit = async () => {
     refreshNuxtData()
   } catch (err: any) {
     errorMessage.value = err?.data?.message || err?.message || 'Gagal menyimpan transaksi'
+    scrollToTop()
     triggerHaptic('error')
   } finally {
     loading.value = false
@@ -413,7 +440,7 @@ const handleSubmit = async () => {
         </div>
 
         <!-- ── Form Body (Scrollable) ─────────────────────────── -->
-        <div class="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+        <div ref="scrollContainerRef" class="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
           <!-- Error Alert -->
           <div
             v-if="errorMessage"

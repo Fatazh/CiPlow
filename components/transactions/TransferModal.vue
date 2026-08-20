@@ -70,6 +70,14 @@ const onAmountBlur = () => {
   }
 }
 
+const scrollContainerRef = ref<HTMLElement | null>(null)
+
+const scrollToTop = () => {
+  nextTick(() => {
+    scrollContainerRef.value?.scrollTo({ top: 0, behavior: 'smooth' })
+  })
+}
+
 // ── Reset & Initialize ─────────────────────────────────────────
 const resetForm = () => {
   errorMessage.value = ''
@@ -93,19 +101,25 @@ watch(
   () => props.modelValue,
   (isOpen) => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden'
+      if (import.meta.client && typeof document !== 'undefined') {
+        document.body.style.overflow = 'hidden'
+      }
       refreshWallets()
       refreshCategories()
       resetForm()
     } else {
-      document.body.style.overflow = ''
+      if (import.meta.client && typeof document !== 'undefined') {
+        document.body.style.overflow = ''
+      }
     }
   },
   { immediate: true }
 )
 
 onUnmounted(() => {
-  document.body.style.overflow = ''
+  if (import.meta.client && typeof document !== 'undefined') {
+    document.body.style.overflow = ''
+  }
 })
 
 const swapWallets = () => {
@@ -136,18 +150,29 @@ const closeModal = () => {
 const handleSubmit = async () => {
   if (!form.walletFromId) {
     errorMessage.value = 'Pilih dompet asal'
+    scrollToTop()
     return
   }
   if (!form.walletToId) {
     errorMessage.value = 'Pilih dompet tujuan'
+    scrollToTop()
     return
   }
   if (form.walletFromId === form.walletToId) {
     errorMessage.value = 'Dompet asal dan dompet tujuan tidak boleh sama'
+    scrollToTop()
     return
   }
   if (form.amount <= 0) {
     errorMessage.value = 'Nominal transfer harus lebih dari 0'
+    scrollToTop()
+    return
+  }
+
+  if (sourceWallet.value && Number(sourceWallet.value.balance) < form.amount) {
+    errorMessage.value = `Saldo sumber dana tidak mencukupi. Saldo '${sourceWallet.value.name}' saat ini : ${Number(sourceWallet.value.balance)}`
+    scrollToTop()
+    triggerHaptic('error')
     return
   }
 
@@ -193,6 +218,7 @@ const handleSubmit = async () => {
     refreshNuxtData()
   } catch (err: any) {
     errorMessage.value = err?.data?.message || err?.message || 'Gagal melakukan transfer dompet'
+    scrollToTop()
     triggerHaptic('error')
   } finally {
     loading.value = false
@@ -235,7 +261,7 @@ const handleSubmit = async () => {
         </div>
 
         <!-- ── Form Body (Scrollable) ─────────────────────────── -->
-        <div class="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+        <div ref="scrollContainerRef" class="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
           <!-- Error Alert -->
           <div
             v-if="errorMessage"

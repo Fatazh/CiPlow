@@ -91,7 +91,7 @@ export default defineEventHandler(async (event) => {
     if ((body.type === 'EXPENSE' || body.type === 'TRANSFER') && Number(wFrom.balance) < amount) {
       throw createError({ 
         statusCode: 400, 
-        message: `Saldo tidak mencukupi. Saldo saat ini: ${Number(wFrom.balance)}` 
+        message: `Saldo sumber dana tidak mencukupi. Saldo '${wFrom.name}' saat ini : ${Number(wFrom.balance)}` 
       })
     }
   }

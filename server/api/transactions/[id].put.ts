@@ -113,7 +113,7 @@ export default defineEventHandler(async (event) => {
       if (freshWallet && Number(freshWallet.balance) < newAmount) {
         throw createError({
           statusCode: 400,
-          message: `Saldo tidak mencukupi. Saldo tersedia setelah penyesuaian: ${Number(freshWallet.balance)}`
+          message: `Saldo sumber dana tidak mencukupi. Saldo '${freshWallet.name}' saat ini : ${Number(freshWallet.balance)}`
         })
       }
     }
