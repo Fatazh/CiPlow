@@ -64,7 +64,16 @@ const processScan = async (base64Image: string) => {
       throw new Error('Gagal mengekstrak data struk.')
     }
   } catch (err: any) {
-    errorMessage.value = err?.data?.message || err?.message || 'Gagal membaca struk dengan AI. Coba foto lebih dekat & jelas.'
+    let msg = err?.data?.message || err?.message || 'Gagal membaca struk dengan AI. Coba foto lebih dekat & jelas.'
+    if (typeof msg === 'string' && msg.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(msg)
+        msg = parsed?.error?.message || msg
+      } catch {
+        // use original
+      }
+    }
+    errorMessage.value = msg
   } finally {
     isScanning.value = false
   }

@@ -138,12 +138,21 @@ Panduan Jawaban:
 
   try {
     const ai = new GoogleGenAI({ apiKey })
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    })
-
-    const advice = response.text || 'Tidak dapat memproses rekomendasi saat ini. Silakan coba kembali.'
+    let advice = ''
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.6-flash',
+        contents: prompt,
+      })
+      advice = response.text || 'Tidak dapat memproses rekomendasi saat ini. Silakan coba kembali.'
+    } catch (primaryErr: any) {
+      console.warn('[Gemini 3.6 Flash failed, trying gemini-flash-latest fallback]', primaryErr?.message)
+      const fallbackResponse = await ai.models.generateContent({
+        model: 'gemini-flash-latest',
+        contents: prompt,
+      })
+      advice = fallbackResponse.text || 'Tidak dapat memproses rekomendasi saat ini. Silakan coba kembali.'
+    }
 
     return {
       ok: true,
@@ -153,9 +162,22 @@ Panduan Jawaban:
     }
   } catch (err: any) {
     console.error('[Gemini Advisor Error]', err)
+    let userMsg = 'Gagal menghasilkan analisis AI. Coba beberapa saat lagi.'
+    if (err?.message) {
+      try {
+        const parsed = typeof err.message === 'string' && err.message.trim().startsWith('{') ? JSON.parse(err.message) : null
+        if (parsed?.error?.message) {
+          userMsg = parsed.error.message
+        } else {
+          userMsg = err.message
+        }
+      } catch {
+        userMsg = err.message
+      }
+    }
     throw createError({
       statusCode: 500,
-      message: err.message || 'Gagal menghasilkan analisis AI. Coba beberapa saat lagi.',
+      message: userMsg,
     })
   }
 })
