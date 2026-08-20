@@ -111,9 +111,10 @@ export default defineEventHandler(async (event) => {
     if (newWalletFromId && (newType === 'EXPENSE' || newType === 'TRANSFER')) {
       const freshWallet = await tx.wallet.findUnique({ where: { id: newWalletFromId } })
       if (freshWallet && Number(freshWallet.balance) < newAmount) {
+        const formattedBalance = Number(freshWallet.balance) === 0 ? '0' : Number(freshWallet.balance).toLocaleString('id-ID')
         throw createError({
           statusCode: 400,
-          message: `Saldo sumber dana tidak mencukupi. Saldo '${freshWallet.name}' saat ini : ${Number(freshWallet.balance)}`
+          message: `Saldo sumber dana tidak mencukupi. Saldo '${freshWallet.name}' saat ini : Rp ${formattedBalance}`
         })
       }
     }

@@ -183,6 +183,16 @@ const savingsAmount = computed(() => {
 })
 
 const scrollContainerRef = ref<HTMLElement | null>(null)
+const successMessage = ref('')
+let successTimer: any = null
+
+const setSuccess = (msg: string) => {
+  successMessage.value = msg
+  if (successTimer) clearTimeout(successTimer)
+  successTimer = setTimeout(() => {
+    successMessage.value = ''
+  }, 4000)
+}
 
 const scrollToTop = () => {
   nextTick(() => {
@@ -228,6 +238,7 @@ watch(
       if (import.meta.client && typeof document !== 'undefined') {
         document.body.style.overflow = 'hidden'
       }
+      successMessage.value = ''
       refreshWallets()
       refreshCategories()
       resetForm()
@@ -324,28 +335,65 @@ const closeModal = () => {
 }
 
 const handleSubmit = async () => {
-  if (form.amount <= 0) {
-    errorMessage.value = 'Nominal harus lebih dari 0'
-    scrollToTop()
-    return
-  }
-  if (!form.categoryId) {
-    errorMessage.value = 'Pilih kategori terlebih dahulu'
-    scrollToTop()
-    return
-  }
-  if (!form.walletId) {
-    errorMessage.value = isExpense.value ? 'Pilih dompet sumber' : 'Pilih dompet tujuan'
-    scrollToTop()
-    return
-  }
+  successMessage.value = ''
 
-  // Pre-check for insufficient balance on Expense
-  if (isExpense.value && selectedWallet.value && Number(selectedWallet.value.balance) < form.amount) {
-    errorMessage.value = `Saldo sumber dana tidak mencukupi. Saldo '${selectedWallet.value.name}' saat ini : ${Number(selectedWallet.value.balance)}`
-    scrollToTop()
-    triggerHaptic('error')
-    return
+  if (isExpense.value) {
+    if (!form.description.trim()) {
+      errorMessage.value = 'Nama item / toko wajib diisi'
+      scrollToTop()
+      triggerHaptic('error')
+      return
+    }
+    if (!form.unitPrice || form.unitPrice <= 0) {
+      errorMessage.value = 'Harga satuan (unit price) wajib diisi'
+      scrollToTop()
+      triggerHaptic('error')
+      return
+    }
+    if (!form.categoryId) {
+      errorMessage.value = 'Pilih kategori terlebih dahulu'
+      scrollToTop()
+      triggerHaptic('error')
+      return
+    }
+    if (!form.walletId) {
+      errorMessage.value = 'Pilih dompet sumber terlebih dahulu'
+      scrollToTop()
+      triggerHaptic('error')
+      return
+    }
+    if (selectedWallet.value && Number(selectedWallet.value.balance) < form.amount) {
+      errorMessage.value = `Saldo sumber dana tidak mencukupi. Saldo '${selectedWallet.value.name}' saat ini : ${formatIDR(selectedWallet.value.balance || 0)}`
+      scrollToTop()
+      triggerHaptic('error')
+      return
+    }
+  } else {
+    // INCOME
+    if (!form.description.trim()) {
+      errorMessage.value = 'Keterangan pemasukan wajib diisi'
+      scrollToTop()
+      triggerHaptic('error')
+      return
+    }
+    if (!form.amount || form.amount <= 0) {
+      errorMessage.value = 'Nominal pemasukan wajib diisi'
+      scrollToTop()
+      triggerHaptic('error')
+      return
+    }
+    if (!form.categoryId) {
+      errorMessage.value = 'Pilih kategori terlebih dahulu'
+      scrollToTop()
+      triggerHaptic('error')
+      return
+    }
+    if (!form.walletId) {
+      errorMessage.value = 'Pilih dompet tujuan terlebih dahulu'
+      scrollToTop()
+      triggerHaptic('error')
+      return
+    }
   }
 
   try {
@@ -387,8 +435,13 @@ const handleSubmit = async () => {
 
     triggerHaptic('success')
     emit('saved', res)
-    closeModal()
+    
+    // Refresh wallets & app data, reset form fields, keep popup open
+    await refreshWallets()
     refreshNuxtData()
+    resetForm()
+    setSuccess(isExpense.value ? 'Pengeluaran berhasil disimpan! 🎉' : 'Pemasukan berhasil disimpan! 💰')
+    scrollToTop()
   } catch (err: any) {
     errorMessage.value = err?.data?.message || err?.message || 'Gagal menyimpan transaksi'
     scrollToTop()
@@ -441,6 +494,18 @@ const handleSubmit = async () => {
 
         <!-- ── Form Body (Scrollable) ─────────────────────────── -->
         <div ref="scrollContainerRef" class="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+          <!-- Success Alert -->
+          <div
+            v-if="successMessage"
+            class="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-between gap-2 shadow-xs animate-slide-up"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-base">✅</span>
+              <span>{{ successMessage }}</span>
+            </div>
+            <button type="button" @click="successMessage = ''" class="text-emerald-500 hover:text-emerald-700 font-bold p-1">✕</button>
+          </div>
+
           <!-- Error Alert -->
           <div
             v-if="errorMessage"

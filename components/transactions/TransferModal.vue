@@ -71,6 +71,16 @@ const onAmountBlur = () => {
 }
 
 const scrollContainerRef = ref<HTMLElement | null>(null)
+const successMessage = ref('')
+let successTimer: any = null
+
+const setSuccess = (msg: string) => {
+  successMessage.value = msg
+  if (successTimer) clearTimeout(successTimer)
+  successTimer = setTimeout(() => {
+    successMessage.value = ''
+  }, 4000)
+}
 
 const scrollToTop = () => {
   nextTick(() => {
@@ -104,6 +114,7 @@ watch(
       if (import.meta.client && typeof document !== 'undefined') {
         document.body.style.overflow = 'hidden'
       }
+      successMessage.value = ''
       refreshWallets()
       refreshCategories()
       resetForm()
@@ -148,29 +159,35 @@ const closeModal = () => {
 }
 
 const handleSubmit = async () => {
+  successMessage.value = ''
+
   if (!form.walletFromId) {
     errorMessage.value = 'Pilih dompet asal'
     scrollToTop()
+    triggerHaptic('error')
     return
   }
   if (!form.walletToId) {
     errorMessage.value = 'Pilih dompet tujuan'
     scrollToTop()
+    triggerHaptic('error')
     return
   }
   if (form.walletFromId === form.walletToId) {
     errorMessage.value = 'Dompet asal dan dompet tujuan tidak boleh sama'
     scrollToTop()
+    triggerHaptic('error')
     return
   }
   if (form.amount <= 0) {
-    errorMessage.value = 'Nominal transfer harus lebih dari 0'
+    errorMessage.value = 'Nominal transfer wajib diisi'
     scrollToTop()
+    triggerHaptic('error')
     return
   }
 
   if (sourceWallet.value && Number(sourceWallet.value.balance) < form.amount) {
-    errorMessage.value = `Saldo sumber dana tidak mencukupi. Saldo '${sourceWallet.value.name}' saat ini : ${Number(sourceWallet.value.balance)}`
+    errorMessage.value = `Saldo sumber dana tidak mencukupi. Saldo '${sourceWallet.value.name}' saat ini : ${formatIDR(sourceWallet.value.balance || 0)}`
     scrollToTop()
     triggerHaptic('error')
     return
@@ -214,8 +231,12 @@ const handleSubmit = async () => {
 
     triggerHaptic('success')
     emit('saved', res)
-    closeModal()
+
+    await refreshWallets()
     refreshNuxtData()
+    resetForm()
+    setSuccess('Transfer dompet berhasil diproses! 🔄')
+    scrollToTop()
   } catch (err: any) {
     errorMessage.value = err?.data?.message || err?.message || 'Gagal melakukan transfer dompet'
     scrollToTop()
@@ -262,6 +283,18 @@ const handleSubmit = async () => {
 
         <!-- ── Form Body (Scrollable) ─────────────────────────── -->
         <div ref="scrollContainerRef" class="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+          <!-- Success Alert -->
+          <div
+            v-if="successMessage"
+            class="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-between gap-2 shadow-xs animate-slide-up"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-base">✅</span>
+              <span>{{ successMessage }}</span>
+            </div>
+            <button type="button" @click="successMessage = ''" class="text-emerald-500 hover:text-emerald-700 font-bold p-1">✕</button>
+          </div>
+
           <!-- Error Alert -->
           <div
             v-if="errorMessage"
