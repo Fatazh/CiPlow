@@ -88,26 +88,49 @@ Catatan:
   try {
     const ai = new GoogleGenAI({ apiKey })
 
-    // Call Gemini 2.5 Flash / 2.0 Flash
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType,
-                data: base64Data,
+    // Call Gemini 3.6 Flash with fallback to gemini-flash-latest
+    let responseText = ''
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.6-flash',
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType,
+                  data: base64Data,
+                },
               },
-            },
-          ],
-        },
-      ],
-    })
+            ],
+          },
+        ],
+      })
+      responseText = response.text || ''
+    } catch (primaryErr: any) {
+      console.warn('[Gemini 3.6 Flash scan failed, trying gemini-flash-latest fallback]', primaryErr?.message)
+      const fallbackResponse = await ai.models.generateContent({
+        model: 'gemini-flash-latest',
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType,
+                  data: base64Data,
+                },
+              },
+            ],
+          },
+        ],
+      })
+      responseText = fallbackResponse.text || ''
+    }
 
-    const responseText = response.text || ''
     // Clean potential markdown wrap
     const cleanedJson = responseText
       .replace(/^```json\s*/i, '')
@@ -149,9 +172,22 @@ Catatan:
     }
   } catch (err: any) {
     console.error('[Gemini Vision Error]', err)
+    let userMsg = 'Gagal membaca struk dengan AI. Pastikan foto struk terlihat jelas.'
+    if (err?.message) {
+      try {
+        const parsed = typeof err.message === 'string' && err.message.trim().startsWith('{') ? JSON.parse(err.message) : null
+        if (parsed?.error?.message) {
+          userMsg = parsed.error.message
+        } else {
+          userMsg = err.message
+        }
+      } catch {
+        userMsg = err.message
+      }
+    }
     throw createError({
       statusCode: err.statusCode || 500,
-      message: err.message || 'Gagal membaca struk dengan AI. Pastikan foto struk terlihat jelas.',
+      message: userMsg,
     })
   }
 })
