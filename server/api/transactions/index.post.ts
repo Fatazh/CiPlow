@@ -89,9 +89,10 @@ export default defineEventHandler(async (event) => {
     
     // Check for sufficient balance (for EXPENSE and TRANSFER)
     if ((body.type === 'EXPENSE' || body.type === 'TRANSFER') && Number(wFrom.balance) < amount) {
+      const formattedBalance = Number(wFrom.balance) === 0 ? '0' : Number(wFrom.balance).toLocaleString('id-ID')
       throw createError({ 
         statusCode: 400, 
-        message: `Saldo sumber dana tidak mencukupi. Saldo '${wFrom.name}' saat ini : ${Number(wFrom.balance)}` 
+        message: `Saldo sumber dana tidak mencukupi. Saldo '${wFrom.name}' saat ini : Rp ${formattedBalance}` 
       })
     }
   }
