@@ -1,5 +1,21 @@
 export type AccentTheme = 'emerald' | 'ocean' | 'violet' | 'amber' | 'rose'
 
+export interface AccentThemeInfo {
+  id: AccentTheme
+  name: string
+  hex: string
+  darkHex: string
+  desc: string
+}
+
+export const ACCENT_THEMES: AccentThemeInfo[] = [
+  { id: 'emerald', name: 'Emerald Green', hex: '#10b981', darkHex: '#059669', desc: 'Warna default CashPlow yang sejuk & profesional' },
+  { id: 'ocean', name: 'Ocean Blue', hex: '#0ea5e9', darkHex: '#0284c7', desc: 'Biru laut modern dan bersih' },
+  { id: 'violet', name: 'Royal Violet', hex: '#8b5cf6', darkHex: '#7c3aed', desc: 'Ungu elegan dan artistik' },
+  { id: 'amber', name: 'Sunset Amber', hex: '#f59e0b', darkHex: '#d97706', desc: 'Kuning keemasan hangat & berenergi' },
+  { id: 'rose', name: 'Rose Pink', hex: '#ec4899', darkHex: '#db2777', desc: 'Merah muda cerah dan menawan' },
+]
+
 export const useUserStore = defineStore('user', () => {
   const { user, updateUser } = useAuth()
   
@@ -14,12 +30,23 @@ export const useUserStore = defineStore('user', () => {
   // ── Accent Color Theme ──────────────────────────────────────
   const accentTheme = ref<AccentTheme>('emerald')
 
+  const currentThemeInfo = computed(() => {
+    return ACCENT_THEMES.find(t => t.id === accentTheme.value) || ACCENT_THEMES[0]
+  })
+
+  const currentAccentHex = computed(() => currentThemeInfo.value.hex)
+
   const applyAccentThemeClass = (theme: AccentTheme) => {
     if (!import.meta.client) return
     const root = document.documentElement
-    root.classList.remove('theme-ocean', 'theme-violet', 'theme-amber', 'theme-rose')
+    root.classList.remove('theme-emerald', 'theme-ocean', 'theme-violet', 'theme-amber', 'theme-rose')
     if (theme !== 'emerald') {
       root.classList.add(`theme-${theme}`)
+    }
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+    if (metaThemeColor) {
+      const info = ACCENT_THEMES.find(t => t.id === theme) || ACCENT_THEMES[0]
+      metaThemeColor.setAttribute('content', info.hex)
     }
   }
 
@@ -75,7 +102,10 @@ export const useUserStore = defineStore('user', () => {
     locale,
     isBalanceHidden,
     accentTheme,
+    currentThemeInfo,
+    currentAccentHex,
     setAccentTheme,
+    applyAccentThemeClass,
     toggleBalanceHidden,
     setCurrency
   }

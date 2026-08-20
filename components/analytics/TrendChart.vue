@@ -28,15 +28,17 @@ const props = withDefaults(defineProps<Props>(), {
 const { formatCompact } = useCurrency()
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
+const userStore = useUserStore()
+const accentHex = computed(() => userStore.currentAccentHex)
 
 // ── Legend toggles ─────────────────────────────────────────────
 const visible = reactive({ income: true, expense: true, savings: true })
 
-const LEGENDS = [
+const LEGENDS = computed(() => [
   { key: 'income'  as const, label: 'Pemasukan',  color: '#10b981' },
   { key: 'expense' as const, label: 'Pengeluaran', color: '#f43f5e' },
-  { key: 'savings' as const, label: 'Tabungan',    color: '#06b6d4' },
-]
+  { key: 'savings' as const, label: 'Tabungan',    color: accentHex.value },
+])
 
 // ── Chart data ─────────────────────────────────────────────────
 const chartData = computed(() => ({
@@ -74,11 +76,11 @@ const chartData = computed(() => ({
       type: 'line' as const,
       label: 'Tabungan',
       data: props.months.map((m) => (visible.savings ? m.savings : null)),
-      borderColor: '#06b6d4',
+      borderColor: accentHex.value,
       backgroundColor: isDark.value
-        ? 'rgba(6, 182, 212, 0.10)'
-        : 'rgba(6, 182, 212, 0.08)',
-      pointBackgroundColor: '#06b6d4',
+        ? `${accentHex.value}30`
+        : `${accentHex.value}18`,
+      pointBackgroundColor: accentHex.value,
       pointBorderColor: isDark.value ? '#0f172a' : '#ffffff',
       pointBorderWidth: 2,
       fill: true,

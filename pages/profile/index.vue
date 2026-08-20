@@ -68,13 +68,7 @@ const userStore = useUserStore();
 
 // ── Accent Color Themes ────────────────────────────────────────
 const showThemeModal = ref(false);
-const accentThemes = [
-    { id: 'emerald', name: 'Emerald Green', hex: '#10b981', desc: 'Warna default CashPlow yang sejuk & profesional' },
-    { id: 'ocean', name: 'Ocean Blue', hex: '#0ea5e9', desc: 'Biru laut modern dan bersih' },
-    { id: 'violet', name: 'Royal Violet', hex: '#8b5cf6', desc: 'Ungu elegan dan artistik' },
-    { id: 'amber', name: 'Sunset Amber', hex: '#f59e0b', desc: 'Kuning keemasan hangat & berenergi' },
-    { id: 'rose', name: 'Rose Pink', hex: '#ec4899', desc: 'Merah muda cerah dan menawan' },
-] as const;
+const accentThemes = ACCENT_THEMES;
 
 const selectAccentTheme = (themeId: any) => {
     userStore.setAccentTheme(themeId);
