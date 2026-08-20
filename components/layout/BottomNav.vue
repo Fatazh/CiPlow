@@ -64,10 +64,32 @@ const isActive = (item: NavItem): boolean => {
   return route.path.startsWith(item.to)
 }
 
-// ── FAB Speed Dial State ───────────────────────────────────────
+// ── FAB Speed Dial & Modals State ──────────────────────────────
 const isSpeedDialOpen = ref(false)
-const showSplitBillModal = ref(false)
 const fabPressed = ref(false)
+
+const showExpenseModal = ref(false)
+const showIncomeModal = ref(false)
+const showTransferModal = ref(false)
+const showScanModal = ref(false)
+const showSplitBillModal = ref(false)
+const scannedReceiptData = ref<any>(null)
+
+// ── Global Toast inside BottomNav ─────────────────────────────
+const toast = reactive({
+  show: false,
+  message: '',
+})
+
+let toastTimer: any = null
+const triggerToast = (msg: string) => {
+  toast.message = msg
+  toast.show = true
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => {
+    toast.show = false
+  }, 3000)
+}
 
 const onFabClick = () => {
   fabPressed.value = true
@@ -80,16 +102,54 @@ const closeSpeedDial = () => {
   isSpeedDialOpen.value = false
 }
 
-const navigateAction = (path: string) => {
+const openExpense = () => {
   triggerHaptic('light')
   closeSpeedDial()
-  navigateTo(path)
+  scannedReceiptData.value = null
+  showExpenseModal.value = true
+}
+
+const openIncome = () => {
+  triggerHaptic('light')
+  closeSpeedDial()
+  showIncomeModal.value = true
+}
+
+const openTransfer = () => {
+  triggerHaptic('light')
+  closeSpeedDial()
+  showTransferModal.value = true
+}
+
+const openScan = () => {
+  triggerHaptic('light')
+  closeSpeedDial()
+  showScanModal.value = true
 }
 
 const openSplitBill = () => {
   triggerHaptic('light')
   closeSpeedDial()
   showSplitBillModal.value = true
+}
+
+const handleScannedReceipt = (data: any) => {
+  showScanModal.value = false
+  scannedReceiptData.value = data
+  showExpenseModal.value = true
+  triggerToast(`✨ Struk dari "${data.merchant || 'Toko'}" siap dicatat!`)
+}
+
+const onExpenseSaved = () => {
+  triggerToast('Pengeluaran berhasil dicatat! 🎉')
+}
+
+const onIncomeSaved = () => {
+  triggerToast('Pemasukan berhasil dicatat! 💰')
+}
+
+const onTransferSaved = () => {
+  triggerToast('Transfer dompet berhasil diproses! 🔄')
 }
 </script>
 
@@ -114,7 +174,7 @@ const openSplitBill = () => {
           <button
             type="button"
             class="w-full p-3.5 rounded-2xl bg-white dark:bg-surface-900 shadow-xl border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-98 transition-all"
-            @click="navigateAction('/add-transaction?type=EXPENSE')"
+            @click="openExpense"
           >
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center text-lg shadow-xs group-hover:scale-110 transition-transform">
@@ -132,7 +192,7 @@ const openSplitBill = () => {
           <button
             type="button"
             class="w-full p-3.5 rounded-2xl bg-white dark:bg-surface-900 shadow-xl border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-98 transition-all"
-            @click="navigateAction('/add-transaction?type=INCOME')"
+            @click="openIncome"
           >
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg shadow-xs group-hover:scale-110 transition-transform">
@@ -150,7 +210,7 @@ const openSplitBill = () => {
           <button
             type="button"
             class="w-full p-3.5 rounded-2xl bg-white dark:bg-surface-900 shadow-xl border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-98 transition-all"
-            @click="navigateAction('/add-transaction?type=TRANSFER')"
+            @click="openTransfer"
           >
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg shadow-xs group-hover:scale-110 transition-transform">
@@ -168,7 +228,7 @@ const openSplitBill = () => {
           <button
             type="button"
             class="w-full p-3.5 rounded-2xl bg-white dark:bg-surface-900 shadow-xl border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-98 transition-all"
-            @click="navigateAction('/add-transaction?action=scan')"
+            @click="openScan"
           >
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center text-lg shadow-xs group-hover:scale-110 transition-transform">
@@ -204,10 +264,60 @@ const openSplitBill = () => {
     </Transition>
   </Teleport>
 
-  <!-- ── Split Bill Modal Instance ────────────────────────────── -->
+  <!-- ── Separate Dedicated Modals ─────────────────────────────── -->
+  <!-- 1. Catat Pengeluaran Modal -->
+  <TransactionFormModal
+    v-model="showExpenseModal"
+    type="EXPENSE"
+    :initial-data="scannedReceiptData"
+    @saved="onExpenseSaved"
+  />
+
+  <!-- 2. Catat Pemasukan Modal -->
+  <TransactionFormModal
+    v-model="showIncomeModal"
+    type="INCOME"
+    @saved="onIncomeSaved"
+  />
+
+  <!-- 3. Transfer Dompet Modal -->
+  <TransferModal
+    v-model="showTransferModal"
+    @saved="onTransferSaved"
+  />
+
+  <!-- 4. Scan Struk AI Scanner Modal -->
+  <ReceiptScannerModal
+    :show="showScanModal"
+    @close="showScanModal = false"
+    @scanned="handleScannedReceipt"
+  />
+
+  <!-- 5. Split Bill Modal Instance -->
   <SplitBillModal
     v-model="showSplitBillModal"
   />
+
+  <!-- ── Floating Feedback Toast ───────────────────────────────── -->
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition-all duration-300 ease-out"
+      enter-from-class="opacity-0 translate-y-4"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 translate-y-4"
+    >
+      <div
+        v-if="toast.show"
+        class="fixed top-5 inset-x-0 z-50 flex justify-center px-4 pointer-events-none"
+      >
+        <div class="bg-gray-900/90 dark:bg-white/95 text-white dark:text-gray-900 px-4 py-2.5 rounded-2xl shadow-xl backdrop-blur-md text-xs font-bold flex items-center gap-2 pointer-events-auto">
+          <span>{{ toast.message }}</span>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 
   <!--
     Bottom Navigation Bar
