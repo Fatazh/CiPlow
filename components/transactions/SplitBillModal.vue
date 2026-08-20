@@ -212,7 +212,7 @@ const copySummary = () => {
     >
       <div
         v-if="modelValue"
-        class="fixed inset-0 z-[90] flex items-end justify-center bg-black/60 backdrop-blur-xs px-4 pb-6"
+        class="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-xs px-4 pb-6"
         @click.self="emit('update:modelValue', false)"
       >
         <Transition

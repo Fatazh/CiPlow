@@ -75,6 +75,16 @@ const showScanModal = ref(false)
 const showSplitBillModal = ref(false)
 const scannedReceiptData = ref<any>(null)
 
+const isAnyModalOpen = computed(() => {
+  return (
+    showExpenseModal.value ||
+    showIncomeModal.value ||
+    showTransferModal.value ||
+    showScanModal.value ||
+    showSplitBillModal.value
+  )
+})
+
 // ── Global Toast inside BottomNav ─────────────────────────────
 const toast = reactive({
   show: false,
@@ -325,12 +335,14 @@ const onTransferSaved = () => {
     [Home] - [ Analytics | FAB | Master ] - [Profile]
   -->
   <nav
+    v-show="!isAnyModalOpen"
     class="
-      fixed bottom-4 inset-x-0 z-50
+      fixed bottom-4 inset-x-0 z-40
       w-full max-w-app mx-auto
       px-4
       pb-safe
       pointer-events-none
+      transition-opacity duration-200
     "
   >
     <div class="flex items-center justify-between gap-3 h-[4.5rem]">
