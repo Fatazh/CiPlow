@@ -34,16 +34,20 @@ const close = () => {
 watch(
   () => props.modelValue,
   (open) => {
-    if (open) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
+    if (import.meta.client && typeof document !== 'undefined') {
+      if (open) {
+        document.body.style.overflow = 'hidden'
+      } else {
+        document.body.style.overflow = ''
+      }
     }
   },
 )
 
 onUnmounted(() => {
-  document.body.style.overflow = ''
+  if (import.meta.client && typeof document !== 'undefined') {
+    document.body.style.overflow = ''
+  }
 })
 </script>
 
