@@ -45,6 +45,9 @@ export async function createSession(userId: string, event: H3Event) {
     path: "/",
   });
 
+  // Opportunistic background cleanup
+  cleanupExpiredSessions().catch(() => {})
+
   return token;
 }
 
@@ -66,6 +69,7 @@ export async function deleteSession(event: H3Event) {
       .catch((err) => console.error("[Auth DB Error]", err));
   }
   deleteCookie(event, SESSION_COOKIE, { path: "/" });
+  cleanupExpiredSessions().catch(() => {})
 }
 
 // ── Get current user from session ────────────────────────────

@@ -166,6 +166,19 @@ const appMenus = [
 ];
 
 // ── Feedback / Rating Modal ────────────────────────────────────
+// ── Toast State ────────────────────────────────────────────────
+const toast = reactive({
+    show: false,
+    message: "",
+    type: "success" as "success" | "error" | "info",
+});
+
+const showToast = (message: string, type: typeof toast.type = "success") => {
+    toast.message = message;
+    toast.type = type;
+    toast.show = true;
+};
+
 const showFeedbackModal = ref(false);
 const feedbackMode = ref<'RATING' | 'BUG_REPORT'>('RATING');
 const feedbackSuccessToast = ref('');
@@ -194,15 +207,15 @@ const resetConfirmText = ref("");
 const isResetting = ref(false);
 
 const handleResetData = async () => {
-    if (resetConfirmText.value !== "HAPUS") return;
+    if (resetConfirmText.value !== "HAPUS" || isResetting.value) return;
 
     isResetting.value = true;
     try {
         await $fetch("/api/auth/reset-data", { method: "POST" });
         // Successful reset, redirect to home to refresh state
         window.location.href = "/";
-    } catch (err) {
-        alert("Gagal menghapus data. Coba lagi.");
+    } catch (err: any) {
+        showToast(err?.data?.message || "Gagal menghapus data. Coba lagi.", "error");
     } finally {
         isResetting.value = false;
         showResetModal.value = false;
@@ -235,7 +248,7 @@ const handleAction = (action: string) => {
     } else if (action === "reset") {
         showResetModal.value = true;
     } else {
-        alert(`Fitur ${action} sedang dalam tahap pengembangan!`);
+        showToast(`Fitur ${action} sedang dalam tahap pengembangan! 🛠️`, "info");
     }
 };
 </script>
@@ -990,5 +1003,12 @@ const handleAction = (action: string) => {
                 </div>
             </div>
         </Transition>
+
+        <!-- General Toast -->
+        <Toast
+            v-model="toast.show"
+            :message="toast.message"
+            :type="toast.type"
+        />
     </div>
 </template>

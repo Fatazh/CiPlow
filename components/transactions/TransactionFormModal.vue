@@ -35,6 +35,8 @@ const emit = defineEmits<{
 }>()
 
 const { formatIDR } = useCurrency()
+const isOnline = useOnline()
+const { saveOffline } = useOfflineSync()
 
 // ── Fetch Wallets & Categories ─────────────────────────────────
 const { data: walletsRaw, refresh: refreshWallets } = await useFetch('/api/wallets', {
@@ -428,6 +430,16 @@ const handleSubmit = async () => {
       payload.walletToId = form.walletId
     }
 
+    if (!isOnline.value) {
+      saveOffline(payload)
+      triggerHaptic('success')
+      emit('saved', payload)
+      resetForm()
+      setSuccess('📶 Tersimpan offline! Akan otomatis disinkronkan saat internet aktif.')
+      scrollToTop()
+      return
+    }
+
     const res: any = await $fetch('/api/transactions', {
       method: 'POST',
       body: payload,
@@ -456,7 +468,7 @@ const handleSubmit = async () => {
   <Teleport to="body">
     <div
       v-if="modelValue"
-      class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in"
+      class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in touch-none overscroll-contain"
       @click.self="closeModal"
     >
       <div

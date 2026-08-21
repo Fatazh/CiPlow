@@ -166,8 +166,11 @@ const recordAsDebt = async (p: { id: string; name: string; calculatedAmount: num
       debtSuccessToast.value = ''
     }, 3000)
   } catch (err: any) {
-    alert(err?.data?.message || 'Gagal menyimpan piutang')
+    debtSuccessToast.value = `⚠️ ${err?.data?.message || 'Gagal menyimpan piutang'}`
     triggerHaptic('error')
+    setTimeout(() => {
+      debtSuccessToast.value = ''
+    }, 3000)
   } finally {
     savingDebtFor.value = null
   }
@@ -212,7 +215,7 @@ const copySummary = () => {
     >
       <div
         v-if="modelValue"
-        class="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-xs px-4 pb-6"
+        class="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-xs px-4 pb-6 touch-none overscroll-contain"
         @click.self="emit('update:modelValue', false)"
       >
         <Transition

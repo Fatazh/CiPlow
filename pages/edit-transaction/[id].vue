@@ -112,7 +112,9 @@ const handleReceiptUpload = async (e: Event) => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-        alert("Ukuran foto struk maksimal 10 MB");
+        toast.message = "Ukuran foto struk maksimal 10 MB";
+        toast.type = "error";
+        toast.show = true;
         return;
     }
     try {
@@ -407,7 +409,96 @@ const hasChanges = computed(() => {
 
 // ── Submit ───────────────────────────────────────────────────
 const submit = async () => {
-    if (!canSubmit.value || saving.value || !hasChanges.value) return;
+    if (saving.value) return;
+
+    if (form.amount <= 0) {
+        toast.message = "Nominal transaksi harus lebih dari 0";
+        toast.type = "error";
+        toast.show = true;
+        if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
+    if (!form.categoryId) {
+        toast.message = "Pilih kategori terlebih dahulu";
+        toast.type = "error";
+        toast.show = true;
+        if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
+
+    if (txType.value === "EXPENSE") {
+        if (!form.description.trim()) {
+            toast.message = "Nama item / toko wajib diisi";
+            toast.type = "error";
+            toast.show = true;
+            if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        if (!form.unitPrice || form.unitPrice <= 0) {
+            toast.message = "Harga satuan (unit price) wajib diisi";
+            toast.type = "error";
+            toast.show = true;
+            if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        if (!form.walletFromId) {
+            toast.message = "Pilih dompet sumber terlebih dahulu";
+            toast.type = "error";
+            toast.show = true;
+            if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+    } else if (txType.value === "INCOME") {
+        if (!form.description.trim()) {
+            toast.message = "Keterangan pemasukan wajib diisi";
+            toast.type = "error";
+            toast.show = true;
+            if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        if (!form.walletToId) {
+            toast.message = "Pilih dompet tujuan terlebih dahulu";
+            toast.type = "error";
+            toast.show = true;
+            if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+    } else if (txType.value === "TRANSFER") {
+        if (!form.walletFromId || !form.walletToId) {
+            toast.message = "Pilih dompet asal dan dompet tujuan";
+            toast.type = "error";
+            toast.show = true;
+            if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        if (form.walletFromId === form.walletToId) {
+            toast.message = "Dompet asal dan tujuan tidak boleh sama";
+            toast.type = "error";
+            toast.show = true;
+            if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+    }
+
+    if (isBalanceInsufficient.value && selectedWalletFrom.value) {
+        let availableBalance = Number(selectedWalletFrom.value.balance);
+        if (txData.value && txData.value.walletFrom?.id === selectedWalletFrom.value.id) {
+            availableBalance += Number(txData.value.amount);
+        }
+        toast.message = `Saldo sumber dana tidak mencukupi. Saldo '${selectedWalletFrom.value.name}' saat ini : ${formatIDR(availableBalance)}`;
+        toast.type = "error";
+        toast.show = true;
+        if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
+
+    if (!hasChanges.value) {
+        toast.message = "Tidak ada perubahan data";
+        toast.type = "info";
+        toast.show = true;
+        return;
+    }
+
     saving.value = true;
 
     try {
@@ -455,6 +546,7 @@ const submit = async () => {
         toast.type = "error";
         toast.show = true;
         saving.value = false;
+        if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 };
 </script>
