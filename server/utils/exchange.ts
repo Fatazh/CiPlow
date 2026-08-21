@@ -1,5 +1,5 @@
 // server/utils/exchange.ts
-// Exchange rate utility to avoid internal HTTP calls
+// Exchange rate utility with live public API fallback, 24h memory cache & DB history
 
 import prisma from './prisma'
 
@@ -14,6 +14,31 @@ const ratesToUsd: Record<string, number> = {
   'AUD': 1.52,
 }
 
+const dynamicRates: Record<string, number> = { ...ratesToUsd }
+let lastFetchTime = 0
+
+async function refreshLiveRatesIfNeeded() {
+  const now = Date.now()
+  if (now - lastFetchTime < 24 * 60 * 60 * 1000) return
+
+  try {
+    const res: any = await $fetch('https://open.er-api.com/v6/latest/USD', {
+      timeout: 3000,
+      retry: 0
+    })
+    if (res && res.rates) {
+      for (const [curr, r] of Object.entries(res.rates)) {
+        if (typeof r === 'number') {
+          dynamicRates[curr] = r
+        }
+      }
+      lastFetchTime = now
+    }
+  } catch {
+    // Offline or network error -> use existing cached or static rates
+  }
+}
+
 /**
  * Gets the exchange rate between two currencies.
  * Logic is central here, used by both API and internal server processes.
@@ -21,11 +46,13 @@ const ratesToUsd: Record<string, number> = {
 export async function getExchangeRate(base: string, target: string): Promise<number> {
   if (!base || !target || base === target) return 1
 
+  await refreshLiveRatesIfNeeded()
+
   let rate = 1
-  if (ratesToUsd[base] && ratesToUsd[target]) {
-    rate = (1 / ratesToUsd[base]!) * ratesToUsd[target]!
+  if (dynamicRates[base] && dynamicRates[target]) {
+    rate = (1 / dynamicRates[base]!) * dynamicRates[target]!
   } else {
-    // Fallback: try to find the latest rate from DB if not in static list
+    // Fallback: try to find the latest rate from DB
     const latest = await prisma.exchangeRate.findFirst({
       where: { baseCurrency: base, targetCurrency: target },
       orderBy: { date: 'desc' }
@@ -33,7 +60,7 @@ export async function getExchangeRate(base: string, target: string): Promise<num
     if (latest) rate = Number(latest.rate)
   }
 
-  // Log to DB for history (async, don't wait if not critical)
+  // Log to DB for history (async, non-blocking)
   prisma.exchangeRate.upsert({
     where: {
       baseCurrency_targetCurrency_date: {
@@ -49,7 +76,7 @@ export async function getExchangeRate(base: string, target: string): Promise<num
       rate,
       date: new Date(new Date().setHours(0, 0, 0, 0)),
     },
-  }).catch(err => console.error('[ExchangeRate Log Error]', err))
+  }).catch((err) => console.error('[ExchangeRate Log Error]', err))
 
   return rate
 }
