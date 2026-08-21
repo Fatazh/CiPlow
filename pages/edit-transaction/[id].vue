@@ -112,7 +112,9 @@ const handleReceiptUpload = async (e: Event) => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-        alert("Ukuran foto struk maksimal 10 MB");
+        toast.message = "Ukuran foto struk maksimal 10 MB";
+        toast.type = "error";
+        toast.show = true;
         return;
     }
     try {
