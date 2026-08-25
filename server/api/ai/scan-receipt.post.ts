@@ -57,32 +57,36 @@ export default defineEventHandler(async (event) => {
 
   const prompt = `
 Anda adalah asisten AI akuntan keuangan pintar untuk aplikasi pencatat keuangan "CashPlow".
-Tugas Anda adalah membaca dan mengekstrak informasi struk / nota belanja / kuitansi kasir dari gambar yang diberikan.
+Tugas Anda adalah membaca dan mengekstrak informasi struk belanja, nota cetak kasir minimarket/supermarket, nota bon warung TULIS TANGAN, atau kuitansi pembayaran dari gambar yang diberikan.
 
 Kategori yang tersedia di aplikasi pengguna:
 ${categoryNames}
 
-Ekstrak informasi berikut dan kembalikan HANYA dalam format JSON valid sesuai skema berikut:
+Panduan Khusus Nota / Struk Tulis Tangan:
+- Bacalah tulisan tangan dengan cermat (nama toko/warung, nama barang/makanan, jumlah, harga per satuan, dan total akhir).
+- Jika ada angka yang dicoret, gunakan angka koreksi terbaru atau total akhir yang tertera.
+- Jika nama toko tidak tertulis di nota tulis tangan, gunakan 'Warung/Toko' atau nama yang relevan dari catatan.
+- Jika gambar benar-benar buram, kosong, atau tidak berisi struk/transaksi apapun sama sekali sehingga tidak dapat dibaca, kembalikan JSON: { "error": "UNREADABLE", "reason": "Foto tidak terbaca atau bukan struk" }
+
+Ekstrak informasi berikut dan kembalikan HANYA dalam format JSON valid:
 {
-  "merchant": "Nama toko / restoran / merchant (misal: Indomaret, Alfamart, Starbucks, SPBU Pertamina). Jika tidak terbaca, gunakan 'Toko/Merchant'",
+  "merchant": "Nama toko / warung / restoran / merchant",
   "date": "Tanggal transaksi dalam format YYYY-MM-DD. Jika tahun tidak tertera gunakan tahun ${new Date().getFullYear()}. Jika tanggal tidak terbaca, gunakan tanggal hari ini: ${new Date().toISOString().split('T')[0]}",
-  "totalAmount": 0 (Nominal angka total pembayaran akhir/grand total, integer tanpa desimal dan tanpa simbol mata uang),
+  "totalAmount": 0 (Nominal angka total pembayaran akhir/grand total, integer number tanpa desimal dan tanpa simbol mata uang),
   "items": [
     {
-      "name": "Nama item barang / produk",
-      "quantity": 1 (angka jumlah item, minimal 1),
-      "unitPrice": 0 (harga per satuan item)
+      "name": "Nama item barang / menu / jasa",
+      "quantity": 1 (angka jumlah item, number minimal 1),
+      "unitPrice": 0 (harga per satuan item, number)
     }
   ],
   "suggestedCategory": "Nama salah satu kategori yang paling cocok dari daftar kategori di atas (hanya namanya saja tanpa tipe, misal: 'Makanan & Minuman' atau 'Belanja Bulanan')",
   "notes": "Catatan singkat rangkuman belanja (opsional)"
 }
 
-Catatan:
-- Pastikan totalAmount adalah total final yang dibayar.
-- Jika ada diskon atau promo yang tertera di struk, sesuaikan total akhir.
-- Seluruh angka harus bertipe number (bukan string).
-- Kembalikan HANYA objek JSON murni tanpa markdown triple backticks.
+Catatan Penting:
+- Seluruh angka nominal harus bertipe number (bukan string).
+- Kembalikan HANYA objek JSON murni tanpa markdown triple backticks atau teks pengantar apapun.
 `
 
   try {
@@ -131,20 +135,29 @@ Catatan:
       responseText = fallbackResponse.text || ''
     }
 
-    // Clean potential markdown wrap
-    const cleanedJson = responseText
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/\s*```$/i, '')
-      .trim()
+    // Extract JSON block using regex if model included preamble
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      throw createError({
+        statusCode: 422,
+        message: 'Struk atau tulisan tangan tidak dapat dibaca oleh AI. Pastikan foto struk memiliki pencahayaan terang dan tulisan yang jelas, atau catat transaksi secara manual.',
+      })
+    }
 
     let parsedResult: any
     try {
-      parsedResult = JSON.parse(cleanedJson)
+      parsedResult = JSON.parse(jsonMatch[0])
     } catch {
       throw createError({
         statusCode: 422,
-        message: 'Gagal memproses struktur data dari struk belanja. Coba ambil foto yang lebih jelas/tegak.',
+        message: 'Struk atau tulisan tangan tidak dapat dibaca oleh AI. Pastikan foto struk memiliki pencahayaan terang dan tulisan yang jelas, atau catat transaksi secara manual.',
+      })
+    }
+
+    if (parsedResult.error === 'UNREADABLE' || (Number(parsedResult.totalAmount) <= 0 && (!parsedResult.items || parsedResult.items.length === 0))) {
+      throw createError({
+        statusCode: 422,
+        message: 'Struk atau tulisan tangan tidak dapat dibaca oleh AI. Pastikan foto struk memiliki pencahayaan terang dan tulisan yang jelas, atau catat transaksi secara manual.',
       })
     }
 
@@ -172,21 +185,21 @@ Catatan:
     }
   } catch (err: any) {
     console.error('[Gemini Vision Error]', err)
-    let userMsg = 'Gagal membaca struk dengan AI. Pastikan foto struk terlihat jelas.'
+    if (err.statusCode) throw err
+
+    let userMsg = 'Struk atau tulisan tangan tidak dapat dibaca oleh AI. Pastikan foto struk terlihat jelas, atau catat secara manual.'
     if (err?.message) {
       try {
         const parsed = typeof err.message === 'string' && err.message.trim().startsWith('{') ? JSON.parse(err.message) : null
         if (parsed?.error?.message) {
           userMsg = parsed.error.message
-        } else {
-          userMsg = err.message
         }
       } catch {
-        userMsg = err.message
+        // use default
       }
     }
     throw createError({
-      statusCode: err.statusCode || 500,
+      statusCode: err.statusCode || 422,
       message: userMsg,
     })
   }
