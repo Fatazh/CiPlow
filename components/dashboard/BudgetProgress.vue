@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ChevronRightIcon, AlertCircleIcon, CheckCircle2Icon, TrendingUpIcon } from 'lucide-vue-next'
+import { ChevronRightIcon, AlertCircleIcon, CheckCircle2Icon, TrendingUpIcon, TargetIcon } from 'lucide-vue-next'
 
-// ── Types ──────────────────────────────────────────────────────
 interface Budget {
   id: string
   category: string
@@ -13,7 +12,6 @@ interface Budget {
   percentage: number
 }
 
-// ── Props ──────────────────────────────────────────────────────
 interface Props {
   budgets?: Budget[]
   period?: string
@@ -26,10 +24,8 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
 })
 
-// ── Composables ────────────────────────────────────────────────
 const { formatIDR, formatCompact } = useCurrency()
 
-// ── Color config based on percentage ──────────────────────────
 interface ColorConfig {
   bar: string
   barGlow: string
@@ -42,19 +38,19 @@ interface ColorConfig {
 const getColorConfig = (pct: number): ColorConfig => {
   if (pct >= 100) {
     return {
-      bar:     'bg-gradient-to-r from-rose-500 to-rose-600 animate-pulse',
-      barGlow: 'shadow-[0_0_12px_3px_rgba(244,63,94,0.5)] ring-1 ring-rose-300',
-      text:    'text-rose-600 dark:text-rose-400 font-black',
+      bar:     'bg-rose-500',
+      barGlow: '',
+      text:    'text-rose-600 dark:text-rose-400 font-bold',
       bg:      'bg-rose-50 dark:bg-rose-950/40',
-      badge:   'bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300 ring-1 ring-rose-200 dark:ring-rose-800',
+      badge:   'bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300',
       icon:    'text-rose-500',
     }
   }
   if (pct >= 85) {
     return {
-      bar:     'bg-gradient-to-r from-amber-400 to-orange-500',
-      barGlow: 'shadow-[0_0_10px_2px_rgba(251,146,60,0.4)]',
-      text:    'text-amber-600 dark:text-amber-400 font-black',
+      bar:     'bg-amber-500',
+      barGlow: '',
+      text:    'text-amber-600 dark:text-amber-400 font-bold',
       bg:      'bg-amber-50 dark:bg-amber-950/30',
       badge:   'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
       icon:    'text-amber-500',
@@ -62,7 +58,7 @@ const getColorConfig = (pct: number): ColorConfig => {
   }
   if (pct >= 60) {
     return {
-      bar:     'bg-gradient-to-r from-yellow-400 to-amber-500',
+      bar:     'bg-yellow-500',
       barGlow: '',
       text:    'text-yellow-600 dark:text-yellow-400',
       bg:      'bg-yellow-50 dark:bg-yellow-950/30',
@@ -71,8 +67,8 @@ const getColorConfig = (pct: number): ColorConfig => {
     }
   }
   return {
-    bar:     'bg-gradient-to-r from-primary-400 to-primary-600',
-    barGlow: 'shadow-xs shadow-primary-500/20',
+    bar:     'bg-primary-500',
+    barGlow: '',
     text:    'text-primary-600 dark:text-primary-400',
     bg:      'bg-primary-50/50 dark:bg-primary-950/20',
     badge:   'bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300',
@@ -185,25 +181,33 @@ onMounted(() => {
       </NuxtLink>
     </div>
 
-    <!-- ── Divider ─────────────────────────────────────────── -->
     <div class="divider" />
 
-    <!-- ── Empty state ──────────────────────────────────────── -->
     <div
       v-if="!budgets.length"
-      class="flex flex-col items-center justify-center py-12 px-4 text-center"
+      class="flex flex-col items-center justify-center py-12 px-4 text-center space-y-2"
     >
-      <span class="text-4xl mb-3">🎯</span>
-      <p class="text-sm font-semibold text-gray-600 dark:text-gray-300">
+      <span
+        class="
+          flex items-center justify-center
+          w-12 h-12 rounded-2xl
+          bg-gray-100 dark:bg-gray-800
+          text-gray-400
+          mx-auto mb-1
+        "
+      >
+        <TargetIcon :size="24" :stroke-width="1.8" />
+      </span>
+      <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">
         Belum ada budget
       </p>
-      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-[200px]">
-        Buat budget di Master Data untuk mulai melacak pengeluaran
+      <p class="text-xs text-gray-400 dark:text-gray-500 max-w-[220px] mx-auto">
+        Buat budget di Master Data untuk mulai melacak batas pengeluaran
       </p>
       <NuxtLink
         to="/master-data"
         class="
-          mt-4 px-4 py-2 rounded-xl text-xs font-semibold
+          mt-3 px-4 py-2 rounded-xl text-xs font-semibold
           bg-primary-500 text-white
           hover:bg-primary-600 active:scale-95
           transition-all duration-150

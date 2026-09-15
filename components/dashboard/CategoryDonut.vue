@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Doughnut } from 'vue-chartjs'
-import { ChevronRightIcon } from 'lucide-vue-next'
+import { ChevronRightIcon, PieChartIcon } from 'lucide-vue-next'
 import type { ChartData, ChartOptions } from 'chart.js'
 
 interface Category {
@@ -179,14 +179,24 @@ const largest = computed(() => {
 
     <div
       v-if="!categories.length"
-      class="flex flex-col items-center justify-center py-10 text-center"
+      class="flex flex-col items-center justify-center py-10 text-center space-y-2"
     >
-      <span class="text-4xl mb-3">📊</span>
-      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+      <span
+        class="
+          flex items-center justify-center
+          w-12 h-12 rounded-2xl
+          bg-gray-100 dark:bg-gray-800
+          text-gray-400
+          mx-auto mb-1
+        "
+      >
+        <PieChartIcon :size="24" :stroke-width="1.8" />
+      </span>
+      <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">
         Belum ada pengeluaran bulan ini
       </p>
-      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-        Tambahkan transaksi untuk melihat grafik
+      <p class="text-xs text-gray-400 dark:text-gray-500 max-w-[200px] mx-auto">
+        Tambahkan transaksi untuk melihat rincian kategori
       </p>
     </div>
 

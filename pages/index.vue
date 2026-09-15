@@ -1,12 +1,17 @@
 <script setup lang="ts">
-// pages/index.vue — Dashboard
+import {
+    HandshakeIcon,
+    TargetIcon,
+    FileTextIcon,
+    CameraIcon,
+    AlertCircleIcon,
+    PlusIcon,
+} from "lucide-vue-next";
 
-// ── Page meta ─────────────────────────────────────────────────
 useHead({
     title: "Beranda — CashPlow",
 });
 
-// ── Fetch dashboard summary ────────────────────────────────────
 const {
     data: summaryData,
     status,
@@ -95,12 +100,13 @@ const period = computed(() => monthly.value?.period ?? currentMonthYear());
 
 <template>
     <div class="space-y-4 animate-fade-in">
-        <!-- ── Error state ──────────────────────────────────────── -->
         <div
             v-if="error && !isLoading"
             class="card rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3"
         >
-            <span class="text-4xl">😵</span>
+            <div class="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/50 text-rose-500 flex items-center justify-center">
+                <AlertCircleIcon :size="24" :stroke-width="1.8" />
+            </div>
             <div>
                 <p
                     class="text-sm font-semibold text-gray-700 dark:text-gray-200"
@@ -115,13 +121,11 @@ const period = computed(() => monthly.value?.period ?? currentMonthYear());
                 class="btn-primary text-sm py-2 px-5"
                 @click="handleRefresh"
             >
-                🔄 Coba Lagi
+                Coba Lagi
             </button>
         </div>
 
-        <!-- ── Main dashboard content ────────────────────────────── -->
         <template v-else>
-            <!-- ── 1. Balance Card ─────────────────────────────────── -->
             <section>
                 <BalanceCard
                     :total="balance?.total"
@@ -134,7 +138,6 @@ const period = computed(() => monthly.value?.period ?? currentMonthYear());
                 />
             </section>
 
-            <!-- ── 2. Income / Expense Summary ────────────────────── -->
             <section>
                 <SummaryCards
                     :income="monthly?.income"
@@ -148,14 +151,13 @@ const period = computed(() => monthly.value?.period ?? currentMonthYear());
                 />
             </section>
 
-            <!-- ── Quick Feature Shortcuts ───────────────────────────── -->
             <section class="grid grid-cols-4 gap-2">
                 <NuxtLink
                     to="/debts"
                     class="card rounded-2xl p-2.5 flex flex-col items-center justify-center text-center gap-1 hover:border-primary-500/40 transition-all active:scale-95 group"
                 >
-                    <span class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
-                        🤝
+                    <span class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <HandshakeIcon :size="18" :stroke-width="2" />
                     </span>
                     <span class="text-[10px] font-bold text-gray-700 dark:text-gray-300">
                         Hutang
@@ -166,8 +168,8 @@ const period = computed(() => monthly.value?.period ?? currentMonthYear());
                     @click="handleOpenNewGoal"
                     class="card rounded-2xl p-2.5 flex flex-col items-center justify-center text-center gap-1 hover:border-primary-500/40 transition-all active:scale-95 group"
                 >
-                    <span class="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-500 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
-                        🎯
+                    <span class="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <TargetIcon :size="18" :stroke-width="2" />
                     </span>
                     <span class="text-[10px] font-bold text-gray-700 dark:text-gray-300">
                         Tabungan
@@ -178,8 +180,8 @@ const period = computed(() => monthly.value?.period ?? currentMonthYear());
                     to="/profile/export"
                     class="card rounded-2xl p-2.5 flex flex-col items-center justify-center text-center gap-1 hover:border-primary-500/40 transition-all active:scale-95 group"
                 >
-                    <span class="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-500 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
-                        📄
+                    <span class="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <FileTextIcon :size="18" :stroke-width="2" />
                     </span>
                     <span class="text-[10px] font-bold text-gray-700 dark:text-gray-300">
                         Ekspor PDF
@@ -190,8 +192,8 @@ const period = computed(() => monthly.value?.period ?? currentMonthYear());
                     to="/add-transaction"
                     class="card rounded-2xl p-2.5 flex flex-col items-center justify-center text-center gap-1 hover:border-primary-500/40 transition-all active:scale-95 group"
                 >
-                    <span class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
-                        📷
+                    <span class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <CameraIcon :size="18" :stroke-width="2" />
                     </span>
                     <span class="text-[10px] font-bold text-gray-700 dark:text-gray-300">
                         Scan AI
@@ -199,7 +201,6 @@ const period = computed(() => monthly.value?.period ?? currentMonthYear());
                 </NuxtLink>
             </section>
 
-            <!-- ── 3. Category Donut Chart ─────────────────────────── -->
             <section>
                 <CategoryDonut
                     :categories="categories"
@@ -209,7 +210,6 @@ const period = computed(() => monthly.value?.period ?? currentMonthYear());
                 />
             </section>
 
-            <!-- ── 4. Recent Transactions ─────────────────────────── -->
             <section>
                 <RecentTransactions
                     :transactions="recentTransactions"
@@ -217,13 +217,11 @@ const period = computed(() => monthly.value?.period ?? currentMonthYear());
                 />
             </section>
 
-            <!-- ── 5. Target Tabungan (Savings Goals) ──────────────── -->
             <section class="space-y-3">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
-                            <span>🎯</span>
-                            <span>Target Tabungan</span>
+                        <h3 class="text-sm font-bold text-gray-800 dark:text-gray-100">
+                            Target Tabungan
                         </h3>
                         <p class="text-[11px] text-gray-400">Pantau progres capaian impian Anda</p>
                     </div>
@@ -231,30 +229,30 @@ const period = computed(() => monthly.value?.period ?? currentMonthYear());
                         @click="handleOpenNewGoal"
                         class="px-2.5 py-1 rounded-xl bg-primary-50 hover:bg-primary-100 dark:bg-primary-950/50 dark:hover:bg-primary-900/50 text-primary-600 dark:text-primary-400 text-xs font-bold transition-all active:scale-95 flex items-center gap-1"
                     >
-                        <span>➕</span>
+                        <PlusIcon :size="13" :stroke-width="2.5" />
                         <span>Target Baru</span>
                     </button>
                 </div>
 
-                <!-- Empty state for goals -->
                 <div
                     v-if="savingsGoals.length === 0"
                     class="card rounded-2xl p-5 text-center space-y-2 border border-dashed border-gray-200 dark:border-gray-800"
                 >
-                    <span class="text-3xl">✨</span>
+                    <div class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 flex items-center justify-center mx-auto mb-1">
+                        <TargetIcon :size="20" :stroke-width="1.8" />
+                    </div>
                     <p class="text-xs font-semibold text-gray-600 dark:text-gray-300">Belum ada target tabungan</p>
                     <p class="text-[10px] text-gray-400 max-w-xs mx-auto">
-                        Mulai rencanakan dana darurat, liburan, atau barang impian Anda hari ini!
+                        Mulai rencanakan dana darurat, liburan, atau barang impian Anda hari ini.
                     </p>
                     <button
                         @click="handleOpenNewGoal"
                         class="btn-primary text-xs py-1.5 px-4 mx-auto"
                     >
-                        🚀 Buat Target Sekarang
+                        Buat Target Sekarang
                     </button>
                 </div>
 
-                <!-- Goals list -->
                 <div v-else class="space-y-3">
                     <SavingsGoalCard
                         v-for="goal in savingsGoals"
@@ -267,7 +265,6 @@ const period = computed(() => monthly.value?.period ?? currentMonthYear());
                 </div>
             </section>
 
-            <!-- ── 6. Budget Progress ──────────────────────────────── -->
             <section>
                 <BudgetProgress
                     :budgets="budgets"
@@ -276,14 +273,11 @@ const period = computed(() => monthly.value?.period ?? currentMonthYear());
                 />
             </section>
 
-            <!-- ── Refresh indicator + button ─────────────────────── -->
             <div class="flex flex-col items-center gap-2 pb-2">
-                <!-- Mock data notice -->
                 <div
                     v-if="summaryData?.isMockData"
                     class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40"
                 >
-                    <span class="text-xs">🧪</span>
                     <span
                         class="text-[11px] font-medium text-amber-700 dark:text-amber-400"
                     >

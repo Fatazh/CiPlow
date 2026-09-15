@@ -7,7 +7,6 @@ import {
     WalletIcon,
 } from "lucide-vue-next";
 
-// ── Props ──────────────────────────────────────────────────────
 interface Wallet {
     id: string;
     name: string;
@@ -37,7 +36,6 @@ const props = withDefaults(defineProps<Props>(), {
     loading: false,
 });
 
-// ── Currency ────────────────────────────────────────────────────
 const { formatIDR, formatCompact, isBalanceHidden, toggleBalanceHidden } = useCurrency();
 
 const isVisible = computed(() => !isBalanceHidden.value);
@@ -45,21 +43,17 @@ const toggleVisibility = () => {
     toggleBalanceHidden();
 };
 
-// ── Masked balance display ─────────────────────────────────────
 const maskedAmount = "••••••••";
 
-// ── Displayed balance ──────────────────────────────────────────
 const displayBalance = computed(() =>
     isVisible.value ? formatIDR(props.total) : maskedAmount,
 );
 
-// ── Change label ───────────────────────────────────────────────
 const changeLabel = computed(() => {
     const sign = props.isPositive ? "+" : "";
     return `${sign}${props.changePercent.toFixed(1)}%`;
 });
 
-// ── Wallet type label ──────────────────────────────────────────
 const walletTypeLabel = (type: string): string => {
     const map: Record<string, string> = {
         BANK: "Bank",
@@ -73,7 +67,6 @@ const walletTypeLabel = (type: string): string => {
 </script>
 
 <template>
-    <!-- ── Skeleton ────────────────────────────────────────────── -->
     <div
         v-if="loading"
         class="card-gradient rounded-2xl p-5 animate-pulse"
@@ -91,34 +84,12 @@ const walletTypeLabel = (type: string): string => {
         </div>
     </div>
 
-    <!-- ── Card ───────────────────────────────────────────────── -->
     <div
         v-else
         class="card-gradient rounded-2xl overflow-hidden select-none relative group transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
     >
-        <!-- ── Top decoration circles ─────────────────────────── -->
-        <div class="relative p-5 overflow-hidden">
-            <!-- BgHover Image (Master Data style) -->
-            <img
-                src="/BgHover.png"
-                alt=""
-                class="absolute -right-2 -bottom-2 w-64 h-64 object-contain opacity-25 pointer-events-none group-hover:scale-110 group-hover:-rotate-12 transition-all duration-500 z-0"
-            />
-
-            <!-- Decorative blobs -->
-            <div
-                class="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none"
-            />
-            <div
-                class="absolute -bottom-14 -left-6 w-36 h-36 rounded-full bg-white/10 pointer-events-none"
-            />
-            <div
-                class="absolute top-6 right-20 w-16 h-16 rounded-full bg-white/5 pointer-events-none"
-            />
-
-            <!-- ── Header row ─────────────────────────────────────── -->
+        <div class="relative p-5">
             <div class="relative flex items-start justify-between mb-1">
-                <!-- Label + period -->
                 <div>
                     <p
                         class="text-[#40513B] dark:text-white text-xs font-medium tracking-wide uppercase"
@@ -130,7 +101,6 @@ const walletTypeLabel = (type: string): string => {
                     </p>
                 </div>
 
-                <!-- Visibility toggle -->
                 <button
                     class="flex items-center justify-center w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-[#40513B]/80 dark:text-white/80 transition-all duration-200 active:scale-90 -mt-0.5"
                     :aria-label="
@@ -143,7 +113,6 @@ const walletTypeLabel = (type: string): string => {
                 </button>
             </div>
 
-            <!-- ── Balance amount ────────────────────────────────── -->
             <div class="relative mt-2 mb-3">
                 <Transition
                     mode="out-in"
@@ -166,7 +135,6 @@ const walletTypeLabel = (type: string): string => {
                 </Transition>
             </div>
 
-            <!-- ── Change vs last month ──────────────────────────── -->
             <div class="relative flex items-center gap-1.5 mb-4">
                 <span
                     class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
@@ -188,10 +156,8 @@ const walletTypeLabel = (type: string): string => {
                 <span class="text-[#40513B]/90 dark:text-white/90 text-[11px]"> vs bulan lalu </span>
             </div>
 
-            <!-- ── Divider ────────────────────────────────────────── -->
             <div class="relative w-full h-px bg-white/15 mb-4" />
 
-            <!-- ── Wallet chips ───────────────────────────────────── -->
             <div v-if="wallets.length > 0" class="relative">
                 <p
                     class="text-[#40513B]/50 dark:text-white/50 text-[10px] uppercase tracking-wide font-medium mb-2"
@@ -199,7 +165,6 @@ const walletTypeLabel = (type: string): string => {
                     Dompet Saya
                 </p>
 
-                <!-- Horizontal scroll on mobile -->
                 <div
                     class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5"
                 >
@@ -208,7 +173,6 @@ const walletTypeLabel = (type: string): string => {
                         :key="wallet.id"
                         class="flex items-center gap-1.5 flex-shrink-0 bg-white/15 hover:bg-white/25 rounded-full px-3 py-1.5 cursor-pointer transition-all duration-150 active:scale-95"
                     >
-                        <!-- Wallet icon -->
                         <span class="text-sm leading-none">{{
                             wallet.icon
                         }}</span>
@@ -232,13 +196,12 @@ const walletTypeLabel = (type: string): string => {
                 </div>
             </div>
 
-            <!-- ── Empty wallets ────────────────────────────────── -->
             <div
                 v-else
                 class="relative flex items-center gap-2 text-[#40513B]/50 dark:text-white/50 text-xs"
             >
                 <WalletIcon :size="14" :stroke-width="1.8" />
-                <span>Belum ada dompet — tambahkan di Master Data</span>
+                <span>Belum ada dompet</span>
             </div>
         </div>
     </div>

@@ -147,24 +147,23 @@ const handleScannedReceipt = (data: any) => {
   showScanModal.value = false
   scannedReceiptData.value = data
   showExpenseModal.value = true
-  triggerToast(`✨ Struk dari "${data.merchant || 'Toko'}" siap dicatat!`)
+  triggerToast(`Struk dari "${data.merchant || 'Toko'}" siap dicatat`)
 }
 
 const onExpenseSaved = () => {
-  triggerToast('Pengeluaran berhasil dicatat! 🎉')
+  triggerToast('Pengeluaran berhasil dicatat')
 }
 
 const onIncomeSaved = () => {
-  triggerToast('Pemasukan berhasil dicatat! 💰')
+  triggerToast('Pemasukan berhasil dicatat')
 }
 
 const onTransferSaved = () => {
-  triggerToast('Transfer dompet berhasil diproses! 🔄')
+  triggerToast('Transfer dompet berhasil diproses')
 }
 </script>
 
 <template>
-  <!-- ── Speed Dial Backdrop & Actions Overlay ────────────────── -->
   <Teleport to="body">
     <Transition
       enter-active-class="transition-all duration-300 ease-out"
@@ -180,94 +179,84 @@ const onTransferSaved = () => {
         @click.self="closeSpeedDial"
       >
         <div class="w-full max-w-[320px] space-y-2.5 animate-slide-up select-none">
-          <!-- Item 1: Catat Pengeluaran -->
           <button
             type="button"
             class="w-full p-3.5 rounded-2xl bg-white dark:bg-surface-900 shadow-xl border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-98 transition-all"
             @click="openExpense"
           >
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center text-lg shadow-xs group-hover:scale-110 transition-transform">
-                💸
+              <div class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform">
+                <TrendingDownIcon :size="20" :stroke-width="2.5" />
               </div>
               <div class="text-left">
-                <div class="text-xs font-black text-gray-800 dark:text-gray-100">Catat Pengeluaran</div>
+                <div class="text-xs font-bold text-gray-800 dark:text-gray-100">Catat Pengeluaran</div>
                 <div class="text-[10px] text-gray-400">Belanja, makan, tagihan</div>
               </div>
             </div>
-            <span class="text-xs font-bold text-rose-500">Baru →</span>
           </button>
 
-          <!-- Item 2: Catat Pemasukan -->
           <button
             type="button"
             class="w-full p-3.5 rounded-2xl bg-white dark:bg-surface-900 shadow-xl border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-98 transition-all"
             @click="openIncome"
           >
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg shadow-xs group-hover:scale-110 transition-transform">
-                💰
+              <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform">
+                <TrendingUpIcon :size="20" :stroke-width="2.5" />
               </div>
               <div class="text-left">
-                <div class="text-xs font-black text-gray-800 dark:text-gray-100">Catat Pemasukan</div>
+                <div class="text-xs font-bold text-gray-800 dark:text-gray-100">Catat Pemasukan</div>
                 <div class="text-[10px] text-gray-400">Gaji, bonus, profit</div>
               </div>
             </div>
-            <span class="text-xs font-bold text-emerald-500">Baru →</span>
           </button>
 
-          <!-- Item 3: Transfer Antar Dompet -->
           <button
             type="button"
             class="w-full p-3.5 rounded-2xl bg-white dark:bg-surface-900 shadow-xl border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-98 transition-all"
             @click="openTransfer"
           >
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg shadow-xs group-hover:scale-110 transition-transform">
-                🔄
+              <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform">
+                <ArrowLeftRightIcon :size="20" :stroke-width="2.5" />
               </div>
               <div class="text-left">
-                <div class="text-xs font-black text-gray-800 dark:text-gray-100">Transfer Dompet</div>
+                <div class="text-xs font-bold text-gray-800 dark:text-gray-100">Transfer Dompet</div>
                 <div class="text-[10px] text-gray-400">Tarik tunai, top-up e-wallet</div>
               </div>
             </div>
-            <span class="text-xs font-bold text-blue-500">Pindah →</span>
           </button>
 
-          <!-- Item 4: Scan Struk AI -->
           <button
             type="button"
             class="w-full p-3.5 rounded-2xl bg-white dark:bg-surface-900 shadow-xl border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-98 transition-all"
             @click="openScan"
           >
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center text-lg shadow-xs group-hover:scale-110 transition-transform">
-                🧾
+              <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform">
+                <CameraIcon :size="20" :stroke-width="2.5" />
               </div>
               <div class="text-left">
-                <div class="text-xs font-black text-gray-800 dark:text-gray-100">Scan Struk AI</div>
+                <div class="text-xs font-bold text-gray-800 dark:text-gray-100">Scan Struk</div>
                 <div class="text-[10px] text-gray-400">Otomatis baca nota belanja</div>
               </div>
             </div>
-            <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600">AI Gemini</span>
           </button>
 
-          <!-- Item 5: Split Bill -->
           <button
             type="button"
             class="w-full p-3.5 rounded-2xl bg-white dark:bg-surface-900 shadow-xl border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-98 transition-all"
             @click="openSplitBill"
           >
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg shadow-xs group-hover:scale-110 transition-transform">
-                🧮
+              <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform">
+                <CalculatorIcon :size="20" :stroke-width="2.5" />
               </div>
               <div class="text-left">
-                <div class="text-xs font-black text-gray-800 dark:text-gray-100">Bagi Tagihan (Split Bill)</div>
+                <div class="text-xs font-bold text-gray-800 dark:text-gray-100">Bagi Tagihan (Split Bill)</div>
                 <div class="text-[10px] text-gray-400">Hitung & catat talangan piutang</div>
               </div>
             </div>
-            <span class="text-xs font-bold text-amber-500">Buka →</span>
           </button>
         </div>
       </div>

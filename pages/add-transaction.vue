@@ -1,5 +1,14 @@
 <script setup lang="ts">
-// pages/add-transaction.vue — Phase 4: Add Transaction Form
+import {
+    TrendingDownIcon,
+    TrendingUpIcon,
+    ArrowLeftRightIcon,
+    CameraIcon,
+    TagIcon,
+    ReceiptIcon,
+    WalletIcon,
+    AlertCircleIcon,
+} from "lucide-vue-next";
 
 useHead({ title: "Tambah Transaksi — CashPlow" });
 
@@ -9,14 +18,12 @@ const { formatIDR } = useCurrency();
 const isOnline = useOnline();
 const { saveOffline } = useOfflineSync();
 
-// ── Toast ─────────────────────────────────────────────────────
 const toast = reactive({
     show: false,
     message: "",
     type: "success" as "success" | "error",
 });
 
-// ── Transaction type tabs ─────────────────────────────────────
 const txType = ref<"EXPENSE" | "INCOME" | "TRANSFER">(
     (route.query.type && ["EXPENSE", "INCOME", "TRANSFER"].includes(route.query.type as string))
         ? (route.query.type as any)
@@ -33,19 +40,19 @@ const typeOptions = [
     {
         value: "EXPENSE" as const,
         label: "Pengeluaran",
-        icon: "💸",
+        icon: TrendingDownIcon,
         color: "rose",
     },
     {
         value: "INCOME" as const,
         label: "Pemasukan",
-        icon: "💰",
+        icon: TrendingUpIcon,
         color: "emerald",
     },
     {
         value: "TRANSFER" as const,
         label: "Transfer",
-        icon: "🔄",
+        icon: ArrowLeftRightIcon,
         color: "blue",
     },
 ];
@@ -550,19 +557,19 @@ const handleReceiptScanned = (scanned: any) => {
                 </div>
             </div>
 
-            <!-- AI Scan Button -->
+            <!-- Scan Struk Button -->
             <button
                 type="button"
                 @click="showScannerModal = true"
                 class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-500/20 hover:opacity-95 transition-all active:scale-95 flex items-center gap-1.5"
                 title="Scan Struk dengan AI"
             >
-                <span>📷</span>
+                <CameraIcon :size="14" :stroke-width="2.5" />
                 <span>Scan Struk</span>
             </button>
         </div>
 
-        <!-- ── Transaction Type Selector ─────────────────────────── -->
+        <!-- Transaction Type Selector -->
         <div
             class="flex gap-1.5 p-1 rounded-2xl bg-gray-100 dark:bg-gray-800/60"
         >
@@ -583,21 +590,21 @@ const handleReceiptScanned = (scanned: any) => {
                 "
                 @click="txType = opt.value"
             >
-                <span class="text-sm">{{ opt.icon }}</span>
+                <component :is="opt.icon" :size="15" />
                 <span>{{ opt.label }}</span>
             </button>
         </div>
 
         <!-- ── FORM FIELDS (Dynamic based on Type) ───────────────────── -->
         <div class="space-y-4">
-            <!-- 1. PENGELUARAN ──────── -->
+            <!-- 1. PENGELUARAN -->
             <template v-if="txType === 'EXPENSE'">
                 <!-- Nama Produk -->
                 <div class="card rounded-2xl p-4">
                     <label
                         class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1.5 block"
                     >
-                        📦 Nama Produk / Item
+                        Nama Produk / Item
                     </label>
                     <input
                         v-model="form.description"
@@ -612,7 +619,7 @@ const handleReceiptScanned = (scanned: any) => {
                     <label
                         class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1.5 block"
                     >
-                        📅 Tanggal
+                        Tanggal
                     </label>
                     <input v-model="form.date" type="date" class="input" />
                 </div>
@@ -632,9 +639,10 @@ const handleReceiptScanned = (scanned: any) => {
                     >
                     <span
                         v-else
-                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-lg"
-                        >🏷️</span
+                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400"
                     >
+                        <TagIcon :size="18" />
+                    </span>
                     <div class="flex-1">
                         <p
                             class="text-xs font-semibold text-gray-400 uppercase tracking-wide"
@@ -668,7 +676,7 @@ const handleReceiptScanned = (scanned: any) => {
                     <div class="card rounded-2xl p-4">
                         <label
                             class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block"
-                            >🔢 Jumlah (Qty)</label
+                            >Jumlah (Qty)</label
                         >
                         <input
                             v-model.number="form.quantity"
@@ -680,7 +688,7 @@ const handleReceiptScanned = (scanned: any) => {
                     <div class="card rounded-2xl p-4">
                         <label
                             class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block"
-                            >💰 Harga Satuan</label
+                            >Harga Satuan</label
                         >
                         <div class="relative flex items-center">
                             <span
@@ -699,7 +707,7 @@ const handleReceiptScanned = (scanned: any) => {
                         </div>
                         <div v-if="unitPriceMath.isExpression && unitPriceMath.isValid" class="mt-1.5 flex justify-end">
                             <span class="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 shadow-sm animate-fade-in">
-                                🧮 = {{ formatIDR(unitPriceMath.result || 0) }}
+                                = {{ formatIDR(unitPriceMath.result || 0) }}
                             </span>
                         </div>
                     </div>
@@ -709,7 +717,7 @@ const handleReceiptScanned = (scanned: any) => {
                 <div class="card rounded-2xl p-4 space-y-3">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                            <span class="text-lg">🏷️</span>
+                            <TagIcon :size="16" class="text-rose-500" />
                             <label
                                 class="text-sm font-bold text-gray-800 dark:text-gray-100 cursor-pointer"
                                 for="isPromo"
@@ -788,9 +796,9 @@ const handleReceiptScanned = (scanned: any) => {
                         <!-- Savings Message -->
                         <p
                             v-if="savingsAmount > 0"
-                            class="text-[11px] font-bold text-emerald-500 flex items-center gap-1 mt-1 animate-pulse"
+                            class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-1"
                         >
-                            ✨ Anda sudah menghemat
+                            Anda sudah menghemat
                             {{ formatIDR(savingsAmount) }}!
                         </p>
                     </div>
@@ -811,9 +819,10 @@ const handleReceiptScanned = (scanned: any) => {
                     >
                     <span
                         v-else
-                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-lg"
-                        >👛</span
+                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400"
                     >
+                        <WalletIcon :size="18" />
+                    </span>
                     <div class="flex-1">
                         <p
                             class="text-xs font-semibold text-gray-400 uppercase tracking-wide"
@@ -847,7 +856,7 @@ const handleReceiptScanned = (scanned: any) => {
                     v-if="isBalanceInsufficient"
                     class="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50"
                 >
-                    <span class="text-amber-500 text-lg">⚠️</span>
+                    <AlertCircleIcon :size="18" class="text-amber-500 shrink-0 mt-0.5" />
                     <div class="flex-1">
                         <p
                             class="text-xs font-bold text-amber-800 dark:text-amber-400"
@@ -867,7 +876,7 @@ const handleReceiptScanned = (scanned: any) => {
                 <div class="card rounded-2xl p-4">
                     <label
                         class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block"
-                        >💬 Catatan (opsional)</label
+                        >Catatan (opsional)</label
                     >
                     <textarea
                         v-model="form.notes"
@@ -935,13 +944,13 @@ const handleReceiptScanned = (scanned: any) => {
                 </div>
             </template>
 
-            <!-- 2. PEMASUKAN ──────── -->
+            <!-- 2. PEMASUKAN -->
             <template v-else-if="txType === 'INCOME'">
                 <!-- Nama Pemasukan -->
                 <div class="card rounded-2xl p-4">
                     <label
                         class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block"
-                        >💼 Nama Pemasukan</label
+                        >Nama Pemasukan</label
                     >
                     <input
                         v-model="form.description"
@@ -955,7 +964,7 @@ const handleReceiptScanned = (scanned: any) => {
                 <div class="card rounded-2xl p-4">
                     <label
                         class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block"
-                        >📅 Tanggal</label
+                        >Tanggal</label
                     >
                     <input v-model="form.date" type="date" class="input" />
                 </div>
@@ -975,9 +984,10 @@ const handleReceiptScanned = (scanned: any) => {
                     >
                     <span
                         v-else
-                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-lg"
-                        >🏷️</span
+                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400"
                     >
+                        <TagIcon :size="18" />
+                    </span>
                     <div class="flex-1">
                         <p
                             class="text-xs font-semibold text-gray-400 uppercase tracking-wide"
@@ -1021,9 +1031,10 @@ const handleReceiptScanned = (scanned: any) => {
                     >
                     <span
                         v-else
-                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-lg"
-                        >👛</span
+                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400"
                     >
+                        <WalletIcon :size="18" />
+                    </span>
                     <div class="flex-1">
                         <p
                             class="text-xs font-semibold text-gray-400 uppercase tracking-wide"
@@ -1056,7 +1067,7 @@ const handleReceiptScanned = (scanned: any) => {
                 <div class="card rounded-2xl p-4">
                     <label
                         class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block"
-                        >💬 Keterangan</label
+                        >Keterangan</label
                     >
                     <textarea
                         v-model="form.notes"
@@ -1091,19 +1102,19 @@ const handleReceiptScanned = (scanned: any) => {
                     </div>
                     <div v-if="amountMath.isExpression && amountMath.isValid" class="mt-2 flex justify-center">
                         <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-3 py-1 rounded-full inline-flex items-center gap-1.5 shadow-sm animate-fade-in">
-                            🧮 = {{ formatIDR(amountMath.result || 0) }}
+                            = {{ formatIDR(amountMath.result || 0) }}
                         </span>
                     </div>
                 </div>
             </template>
 
-            <!-- 3. TRANSFER ──────── -->
+            <!-- 3. TRANSFER -->
             <template v-else-if="txType === 'TRANSFER'">
                 <!-- Tanggal -->
                 <div class="card rounded-2xl p-4">
                     <label
                         class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block"
-                        >📅 Tanggal</label
+                        >Tanggal</label
                     >
                     <input v-model="form.date" type="date" class="input" />
                 </div>
@@ -1123,9 +1134,10 @@ const handleReceiptScanned = (scanned: any) => {
                     >
                     <span
                         v-else
-                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-lg"
-                        >🏷️</span
+                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400"
                     >
+                        <TagIcon :size="18" />
+                    </span>
                     <div class="flex-1">
                         <p
                             class="text-xs font-semibold text-gray-400 uppercase tracking-wide"
@@ -1169,9 +1181,10 @@ const handleReceiptScanned = (scanned: any) => {
                     >
                     <span
                         v-else
-                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-lg"
-                        >👛</span
+                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400"
                     >
+                        <WalletIcon :size="18" />
+                    </span>
                     <div class="flex-1">
                         <p
                             class="text-xs font-semibold text-gray-400 uppercase tracking-wide"
@@ -1217,9 +1230,10 @@ const handleReceiptScanned = (scanned: any) => {
                     >
                     <span
                         v-else
-                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-lg"
-                        >👛</span
+                        class="flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400"
                     >
+                        <WalletIcon :size="18" />
+                    </span>
                     <div class="flex-1">
                         <p
                             class="text-xs font-semibold text-gray-400 uppercase tracking-wide"
@@ -1273,7 +1287,7 @@ const handleReceiptScanned = (scanned: any) => {
                     </div>
                     <div v-if="amountMath.isExpression && amountMath.isValid" class="mt-2 flex justify-center">
                         <span class="text-xs font-black text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/60 px-3 py-1 rounded-full inline-flex items-center gap-1.5 shadow-sm animate-fade-in">
-                            🧮 = {{ formatIDR(amountMath.result || 0) }}
+                            = {{ formatIDR(amountMath.result || 0) }}
                         </span>
                     </div>
                 </div>
@@ -1282,7 +1296,7 @@ const handleReceiptScanned = (scanned: any) => {
                     v-if="isBalanceInsufficient"
                     class="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50"
                 >
-                    <span class="text-amber-500 text-lg">⚠️</span>
+                    <AlertCircleIcon :size="18" class="text-amber-500 shrink-0 mt-0.5" />
                     <div class="flex-1">
                         <p
                             class="text-xs font-bold text-amber-800 dark:text-amber-400"
@@ -1301,7 +1315,7 @@ const handleReceiptScanned = (scanned: any) => {
                 <div class="card rounded-2xl p-4">
                     <label
                         class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block"
-                        >💬 Keterangan</label
+                        >Keterangan</label
                     >
                     <textarea
                         v-model="form.notes"
@@ -1312,11 +1326,11 @@ const handleReceiptScanned = (scanned: any) => {
                 </div>
             </template>
 
-            <!-- ── Tags / Label Khusus ───────────────────────────── -->
+            <!-- Tags / Label Khusus -->
             <div class="card rounded-2xl p-4 space-y-3">
                 <div class="flex items-center justify-between">
                     <label class="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                        <span>🏷️</span>
+                        <TagIcon :size="14" />
                         <span>Label / Tag Transaksi</span>
                     </label>
                     <span class="text-[10px] text-gray-400">Opsional</span>
@@ -1361,11 +1375,11 @@ const handleReceiptScanned = (scanned: any) => {
                 </div>
             </div>
 
-            <!-- ── Lampiran Foto Struk / Nota ─────────────────────── -->
+            <!-- Lampiran Foto Struk / Nota -->
             <div class="card rounded-2xl p-4 space-y-3">
                 <div class="flex items-center justify-between">
                     <label class="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                        <span>🧾</span>
+                        <ReceiptIcon :size="14" />
                         <span>Lampiran Foto Struk / Nota</span>
                     </label>
                     <span class="text-[10px] text-gray-400">Maks 5 MB</span>
@@ -1385,7 +1399,7 @@ const handleReceiptScanned = (scanned: any) => {
                         class="w-full py-3.5 px-4 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 hover:border-primary-500 hover:bg-primary-50/20 text-gray-500 dark:text-gray-400 text-xs font-bold flex items-center justify-center gap-2 transition-all duration-150"
                         @click="receiptFileInput?.click()"
                     >
-                        <span>📷</span>
+                        <CameraIcon :size="15" />
                         <span>Unggah Foto Struk / Bukti Bayar</span>
                     </button>
                 </div>
