@@ -1,12 +1,9 @@
 <script setup lang="ts">
-// Default layout — wraps every page with Header + main scroll area + BottomNav
-
 const { user } = useAuth()
 const { syncTransactions } = useOfflineSync()
 const route = useRoute()
 const mainScrollEl = ref<HTMLElement | null>(null)
 
-// Initial sync on mount
 onMounted(() => {
   syncTransactions()
 })
@@ -32,14 +29,12 @@ watch(
       transition-colors duration-300
     "
   >
-    <!-- ── Top Header ─────────────────────────────────────── -->
     <AppHeader
       :user-name="user?.name ?? 'User'"
       :avatar-url="user?.avatar ?? undefined"
-      :has-notification="true"
+      :has-notification="false"
     />
 
-    <!-- ── Scrollable Page Content ────────────────────────── -->
     <main
       ref="mainScrollEl"
       class="
@@ -53,10 +48,8 @@ watch(
       <slot />
     </main>
 
-    <!-- ── Bottom Navigation ───────────────────────────────── -->
     <BottomNav />
 
-    <!-- ── PWA: Offline indicator + Install prompt ────────── -->
     <OfflineIndicator />
     <PwaInstallPrompt />
   </div>

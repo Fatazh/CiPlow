@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { TrendingUpIcon, TrendingDownIcon, ArrowUpIcon, ArrowDownIcon } from 'lucide-vue-next'
 
-// ── Props ──────────────────────────────────────────────────────
 interface Props {
   income?: number
   expense?: number
@@ -24,10 +23,8 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
 })
 
-// ── Currency ────────────────────────────────────────────────────
 const { formatCompact, maskBalance } = useCurrency()
 
-// ── Computed change labels ─────────────────────────────────────
 const incomeChangeLabel = computed(() => {
   const sign = props.incomeChange >= 0 ? '+' : ''
   return `${sign}${Math.abs(props.incomeChange).toFixed(1)}%`
@@ -38,7 +35,6 @@ const expenseChangeLabel = computed(() => {
   return `${sign}${Math.abs(props.expenseChange).toFixed(1)}%`
 })
 
-// ── Savings rate ───────────────────────────────────────────────
 const savingsRate = computed(() => {
   if (!props.income || props.income === 0) return 0
   return Math.max(0, ((props.income - props.expense) / props.income) * 100)
@@ -48,7 +44,6 @@ const savingsAmount = computed(() => props.income - props.expense)
 </script>
 
 <template>
-  <!-- ── Skeletons ──────────────────────────────────────────── -->
   <div v-if="loading" class="grid grid-cols-2 gap-3">
     <div
       v-for="i in 2"
@@ -64,35 +59,18 @@ const savingsAmount = computed(() => props.income - props.expense)
     </div>
   </div>
 
-  <!-- ── Cards ─────────────────────────────────────────────── -->
   <div v-else class="space-y-3">
-    <!-- Income + Expense row -->
     <div class="grid grid-cols-2 gap-3">
-
-      <!-- ── Income Card ──────────────────────────────────── -->
       <div
         class="
           card rounded-2xl p-4 overflow-hidden relative
-          border-l-4 border-emerald-400
           animate-fade-in
         "
       >
-        <!-- Background decoration -->
-        <div
-          class="
-            absolute -top-4 -right-4
-            w-20 h-20 rounded-full
-            bg-emerald-50 dark:bg-emerald-950/30
-            pointer-events-none
-          "
-        />
-
-        <!-- Header -->
         <div class="relative flex items-center justify-between mb-3">
           <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             Pemasukan
           </span>
-          <!-- Icon box -->
           <span
             class="
               flex items-center justify-center
@@ -105,7 +83,6 @@ const savingsAmount = computed(() => props.income - props.expense)
           </span>
         </div>
 
-        <!-- Amount -->
         <p
           class="
             relative text-xl font-bold
@@ -116,7 +93,6 @@ const savingsAmount = computed(() => props.income - props.expense)
           {{ maskBalance(formatCompact(income)) }}
         </p>
 
-        <!-- Change indicator -->
         <div class="relative flex items-center gap-1">
           <span
             class="
@@ -140,31 +116,17 @@ const savingsAmount = computed(() => props.income - props.expense)
         </div>
       </div>
 
-      <!-- ── Expense Card ──────────────────────────────────── -->
       <div
         class="
           card rounded-2xl p-4 overflow-hidden relative
-          border-l-4 border-rose-400
           animate-fade-in
         "
         style="animation-delay: 80ms;"
       >
-        <!-- Background decoration -->
-        <div
-          class="
-            absolute -top-4 -right-4
-            w-20 h-20 rounded-full
-            bg-rose-50 dark:bg-rose-950/30
-            pointer-events-none
-          "
-        />
-
-        <!-- Header -->
         <div class="relative flex items-center justify-between mb-3">
           <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             Pengeluaran
           </span>
-          <!-- Icon box -->
           <span
             class="
               flex items-center justify-center
@@ -177,7 +139,6 @@ const savingsAmount = computed(() => props.income - props.expense)
           </span>
         </div>
 
-        <!-- Amount -->
         <p
           class="
             relative text-xl font-bold
@@ -188,7 +149,6 @@ const savingsAmount = computed(() => props.income - props.expense)
           {{ maskBalance(formatCompact(expense)) }}
         </p>
 
-        <!-- Change indicator — for expense, down = good (green) -->
         <div class="relative flex items-center gap-1">
           <span
             class="
@@ -213,20 +173,17 @@ const savingsAmount = computed(() => props.income - props.expense)
       </div>
     </div>
 
-    <!-- ── Savings Summary Bar ──────────────────────────────── -->
     <div
       class="card rounded-2xl px-4 py-3 animate-fade-in"
       style="animation-delay: 160ms;"
     >
       <div class="flex items-center justify-between mb-2">
-        <!-- Label -->
         <div class="flex items-center gap-2">
           <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             Tabungan Bulan Ini
           </span>
         </div>
 
-        <!-- Savings amount + rate -->
         <div class="flex items-center gap-2">
           <span
             class="text-xs font-bold"
@@ -256,7 +213,6 @@ const savingsAmount = computed(() => props.income - props.expense)
         </div>
       </div>
 
-      <!-- Progress bar: portion of income saved -->
       <div class="progress-track">
         <div
           class="h-full rounded-full transition-all duration-700 ease-out"
@@ -271,22 +227,20 @@ const savingsAmount = computed(() => props.income - props.expense)
         />
       </div>
 
-      <!-- Sub-label -->
       <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5">
         <template v-if="savingsRate >= 30">
-          🎉 Luar biasa! Kamu menabung {{ savingsRate.toFixed(0) }}% dari pemasukan
+          Luar biasa! Kamu menabung {{ savingsRate.toFixed(0) }}% dari pemasukan
         </template>
         <template v-else-if="savingsRate >= 10">
-          👍 Bagus! Tingkatkan tabunganmu bulan depan
+          Bagus! Tingkatkan tabunganmu bulan depan
         </template>
         <template v-else-if="savingsAmount < 0">
-          ⚠️ Pengeluaran melebihi pemasukan bulan ini
+          Pengeluaran melebihi pemasukan bulan ini
         </template>
         <template v-else>
-          💡 Coba hemat lebih banyak untuk mencapai target tabungan
+          Tingkatkan tabungan untuk mencapai target finansial
         </template>
       </p>
     </div>
-
   </div>
 </template>

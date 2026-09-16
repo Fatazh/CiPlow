@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// pages/debts/index.vue — Debts & Loans Management (Hutang & Piutang)
+import { HandshakeIcon, CreditCardIcon, PlusIcon, ReceiptIcon } from 'lucide-vue-next'
 import { evaluateMathExpression } from '~/composables/useMathEvaluator'
 
 useHead({ title: "Hutang & Piutang — CashPlow" })
@@ -7,10 +7,8 @@ useHead({ title: "Hutang & Piutang — CashPlow" })
 const router = useRouter()
 const { formatIDR } = useCurrency()
 
-// Active filter tab: ALL | LEND | BORROW | PAID
 const activeTab = ref<'ALL' | 'LEND' | 'BORROW' | 'PAID'>('ALL')
 
-// Fetch debts data & wallets
 const { data: debtsData, refresh: refreshDebts, status } = await useFetch('/api/debts', {
   key: 'debts-list',
   lazy: false,
@@ -29,7 +27,6 @@ const summary = computed(() => (debtsData.value as any)?.data?.summary ?? {
 })
 const wallets = computed<any[]>(() => (walletsData.value as any)?.data ?? [])
 
-// Filtered items
 const filteredDebts = computed(() => {
   if (activeTab.value === 'LEND') {
     return debts.value.filter((d) => d.type === 'LEND' && d.status !== 'PAID')
@@ -43,7 +40,6 @@ const filteredDebts = computed(() => {
   return debts.value
 })
 
-// Modals
 const showFormModal = ref(false)
 const selectedDebtForEdit = ref<any>(null)
 const showPayModal = ref(false)
@@ -51,7 +47,6 @@ const selectedDebtForPay = ref<any>(null)
 const showHistoryModal = ref(false)
 const selectedDebtForHistory = ref<any>(null)
 
-// Toast
 const toast = reactive({
   show: false,
   message: '',
@@ -68,7 +63,7 @@ const shareWhatsAppReminder = (debt: any) => {
   const dueDateText = debt.dueDate
     ? `yang jatuh tempo pada tanggal ${new Date(debt.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
     : ''
-  const text = `Halo ${debt.personName}, sekadar mengingatkan terkait catatan piutang sebesar ${formattedRemaining} ${dueDateText}. Terima kasih banyak sebelumnya ya! 🙏✨`
+  const text = `Halo ${debt.personName}, sekadar mengingatkan terkait catatan piutang sebesar ${formattedRemaining} ${dueDateText}. Terima kasih banyak sebelumnya.`
   const url = `https://wa.me/?text=${encodeURIComponent(text)}`
   window.open(url, '_blank')
 }
@@ -118,7 +113,6 @@ const handlePaySuccess = async (msg: string) => {
 
 <template>
   <div class="space-y-4 animate-fade-in pb-12">
-    <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <button class="btn-icon w-9 h-9" @click="router.push('/')">
@@ -131,50 +125,50 @@ const handlePaySuccess = async (msg: string) => {
             Hutang & Piutang
           </h2>
           <p class="text-xs text-gray-400">
-            Kelola pinjaman dan penagihan
+            Kelola pinjaman dan piutang Anda
           </p>
         </div>
       </div>
 
-      <!-- Add Buttons -->
       <div class="flex items-center gap-1.5">
         <button
           @click="handleOpenCreate('LEND')"
-          class="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-md shadow-emerald-500/20 transition-all active:scale-95 flex items-center gap-1"
+          class="btn-primary text-xs py-2 px-3 flex items-center gap-1.5"
         >
-          <span>➕</span>
+          <PlusIcon :size="14" :stroke-width="2.5" />
           <span>Catat Baru</span>
         </button>
       </div>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-2 gap-3">
-      <!-- Piutang Card -->
-      <div class="card rounded-2xl p-4 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-surface-900 border border-emerald-100 dark:border-emerald-900/30">
-        <div class="flex items-center justify-between">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-            🤝 Total Piutang
+    <div class="grid grid-cols-2 gap-2.5">
+      <div class="card rounded-2xl p-3.5 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border-emerald-500/20">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            Total Piutang
           </span>
-          <span class="text-xs">💰</span>
+          <span class="text-xs text-emerald-500">
+            <HandshakeIcon :size="16" :stroke-width="2" />
+          </span>
         </div>
-        <p class="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-1">
+        <p class="text-base font-extrabold text-gray-800 dark:text-gray-100">
           {{ formatIDR(summary.totalLendRemaining) }}
         </p>
         <p class="text-[10px] text-gray-400 mt-0.5">
-          Uang Anda di orang lain
+          Uang yang dipinjam orang lain
         </p>
       </div>
 
-      <!-- Hutang Card -->
-      <div class="card rounded-2xl p-4 bg-gradient-to-br from-rose-50 to-white dark:from-rose-950/20 dark:to-surface-900 border border-rose-100 dark:border-rose-900/30">
-        <div class="flex items-center justify-between">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-rose-500">
-            💳 Total Hutang
+      <div class="card rounded-2xl p-3.5 bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-transparent border-rose-500/20">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-bold text-rose-600 dark:text-rose-400">
+            Total Hutang
           </span>
-          <span class="text-xs">⚠️</span>
+          <span class="text-xs text-rose-500">
+            <CreditCardIcon :size="16" :stroke-width="2" />
+          </span>
         </div>
-        <p class="text-lg font-black text-rose-500 mt-1">
+        <p class="text-base font-extrabold text-gray-800 dark:text-gray-100">
           {{ formatIDR(summary.totalBorrowRemaining) }}
         </p>
         <p class="text-[10px] text-gray-400 mt-0.5">
@@ -183,14 +177,13 @@ const handlePaySuccess = async (msg: string) => {
       </div>
     </div>
 
-    <!-- Filter Tabs -->
     <div class="flex p-1 rounded-2xl bg-gray-100 dark:bg-gray-800 text-xs font-bold">
       <button
         v-for="t in [
           { key: 'ALL', label: 'Semua' },
-          { key: 'LEND', label: '🤝 Piutang' },
-          { key: 'BORROW', label: '💳 Hutang' },
-          { key: 'PAID', label: '✓ Lunas' },
+          { key: 'LEND', label: 'Piutang' },
+          { key: 'BORROW', label: 'Hutang' },
+          { key: 'PAID', label: 'Lunas' },
         ]"
         :key="t.key"
         @click="activeTab = t.key as any"
@@ -201,20 +194,22 @@ const handlePaySuccess = async (msg: string) => {
       </button>
     </div>
 
-    <!-- Debts List -->
     <div v-if="filteredDebts.length === 0" class="card rounded-2xl p-8 text-center space-y-2 border border-dashed border-gray-200 dark:border-gray-800">
-      <span class="text-3xl">✨</span>
+      <div class="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-400 flex items-center justify-center mx-auto mb-1">
+        <ReceiptIcon :size="24" :stroke-width="1.8" />
+      </div>
       <p class="text-sm font-bold text-gray-700 dark:text-gray-200">
         Tidak ada catatan {{ activeTab === 'LEND' ? 'piutang' : (activeTab === 'BORROW' ? 'hutang' : '') }}
       </p>
       <p class="text-xs text-gray-400 max-w-xs mx-auto">
-        Semua transaksi pinjaman Anda rapi dan tercatat dengan baik di sini.
+        Semua transaksi pinjaman Anda tercatat rapi di sini.
       </p>
       <button
         @click="handleOpenCreate()"
-        class="btn-primary text-xs py-2 px-4 mx-auto mt-2"
+        class="btn-primary text-xs py-2 px-4 mx-auto mt-2 flex items-center gap-1.5"
       >
-        ➕ Catat Hutang / Piutang
+        <PlusIcon :size="14" :stroke-width="2.5" />
+        <span>Catat Hutang / Piutang</span>
       </button>
     </div>
 
@@ -225,14 +220,13 @@ const handlePaySuccess = async (msg: string) => {
         class="card rounded-2xl p-4 transition-all duration-200 border relative overflow-hidden"
         :class="item.status === 'PAID' ? 'border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-950/10' : 'border-gray-100 dark:border-gray-800'"
       >
-        <!-- Card Top -->
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-center gap-3">
             <div
-              class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
+              class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
               :class="item.type === 'LEND' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600' : 'bg-rose-100 dark:bg-rose-950/60 text-rose-500'"
             >
-              {{ item.type === 'LEND' ? '🤝' : '💳' }}
+              <component :is="item.type === 'LEND' ? HandshakeIcon : CreditCardIcon" :size="20" :stroke-width="2" />
             </div>
             <div>
               <div class="flex items-center gap-2">
@@ -247,7 +241,7 @@ const handlePaySuccess = async (msg: string) => {
                 </span>
               </div>
               <p v-if="item.dueDate" class="text-[10px] text-gray-400 mt-0.5">
-                📅 Jatuh Tempo: {{ new Date(item.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) }}
+                Jatuh Tempo: {{ new Date(item.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) }}
               </p>
               <p v-else class="text-[10px] text-gray-400 mt-0.5">
                 Tanpa batas jatuh tempo
@@ -255,9 +249,7 @@ const handlePaySuccess = async (msg: string) => {
             </div>
           </div>
 
-          <!-- Actions -->
           <div class="flex items-center gap-1.5">
-            <!-- WhatsApp Reminder Button for Piutang -->
             <button
               v-if="item.type === 'LEND' && item.status !== 'PAID'"
               @click="shareWhatsAppReminder(item)"

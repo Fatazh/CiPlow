@@ -22,3 +22,12 @@ logs
 .env
 .env.*
 !.env.example
+
+.agents
+.aider-desk
+.claude
+.kimchi
+.kiro
+.qoder
+.qwen
+skills-lock.json
